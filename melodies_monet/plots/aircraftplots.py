@@ -18,6 +18,9 @@ from matplotlib.colors import TwoSlopeNorm, LinearSegmentedColormap, Normalize
 from matplotlib.patches import Rectangle
 from matplotlib.ticker import FuncFormatter
 
+from scipy.stats import ttest_ind
+from statannotations.Annotator import Annotator
+
 import matplotlib.dates as mdates
 
 
@@ -995,7 +998,25 @@ def make_violin_plot(comb_violin, label_violin, outname='plot',
 
     # Increase tick label size
     plt.tick_params(axis='both', labelsize=text_kwargs['fontsize']*0.8)
+
+    # statistical significance of the means 
+    p_values = []
     
+    pairs = [(g1, g2) for i, g1 in enumerate(order) for g2 in order[i+1:]]
+
+    for g1, g2 in pairs: 
+        vals1 = melted_comb_violin[melted_comb_violin["group"] == g1]["value"]
+        vals2 = melted_comb_violin[melted_comb_violin["group"] == g2]["value"]
+        print(vals1)
+        print(vals2)
+        stat, p = ttest_ind(vals1, vals2)
+        p_values.append(p)
+        print(p_values)
+
+    # add *, **, and *** 
+    annotator = Annotator(ax, pairs, data=melted_comb_violin, x='group', y='value', order=order)
+    annotator.configure(test=None, text_format='star', loc='outside', verbose=2)
+    annotator.set_pvalues_and_annotate(p_values)
     
     # Set y-axis limits if provided
     if vmin is not None and vmax is not None:
