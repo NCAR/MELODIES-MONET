@@ -573,7 +573,11 @@ class model:
             if self.files_pm25 is not None:
                 self.mod_kwargs.update({'fname_pm25' : self.files_pm25})
             self.mod_kwargs.update({'var_list' : list_input_var})
-            self.obj = mio.models._rrfs_cmaq_mm.open_mfdataset(self.files,**self.mod_kwargs)
+            self.obj = mio.models._rrfs_cmaq_mm.open_mfdataset(self.files,**self.mod_kwargs) # add liam 
+        elif 'ufschem' in self.model.lower(): # added ufs-chem
+            print('**** Reading UFS-CHEM model output...')
+            self.mod_kwargs.update({'var_list' : list_input_var})
+            self.obj = mio.models._ufschem_v1.open_mfdataset(self.files,**self.mod_kwargs)
         elif 'gsdchem' in self.model.lower():
             print('**** Reading GSD-Chem model output...')
             if len(self.files) > 1:
@@ -1642,6 +1646,12 @@ class analysis:
                 model_name_list = grp_dict['model_name_list']
                 threshold_tick_style = grp_dict.get('threshold_tick_style',None)
 
+            # Read in special settings for SLR 
+            if plot_type == "slr":
+                model_name_list = grp_dict["model_name_list"]
+               
+            
+
             # first get the observational obs labels
 
             obs_vars = []
@@ -1758,11 +1768,12 @@ class analysis:
                         else:
                             use_percentile = None
 
-                        
 
                         # Determine outname
                         outname = "{}.{}.{}.{}.{}.{}.{}".format(grp, plot_type, obsvar, startdatename, enddatename, domain_type, domain_name)
-
+                        # Setting statistical Significance for Boxplots and Violin plots 
+                        set_stat_sig = grp_dict['data_proc'].get('set_stat_sig', False)
+                    
                         # Query with filter options
                         if 'filter_dict' in grp_dict['data_proc'] and 'filter_string' in grp_dict['data_proc']:
                             raise Exception("""For plot group: {}, only one of filter_dict and filter_string can be specified.""".format(grp))
@@ -2500,7 +2511,8 @@ class analysis:
                                     plot_dict=obs_dict,
                                     fig_dict=fig_dict,
                                     text_dict=text_dict,
-                                    debug=self.debug
+                                    debug=self.debug,
+                                    set_stat_sig=False
                                 )
                                 #Clear info for next plot.
                                 del (comb_bx, label_bx, fig_dict, plot_dict, text_dict, obs_dict, obs_plot_dict)   
@@ -2865,6 +2877,57 @@ class analysis:
                                 print('Warning: Spatial overlay plots are not available yet for regulatory metrics.')
 
                             del (fig_dict, plot_dict, text_dict, obs_dict, obs_plot_dict) #Clear info for next plot.
+                            
+                        elif plot_type.lower() == "slr":
+                            if obs_type in ["airnow_ufschem_v1"]:
+                                pairdf_sel = pairdf.squeeze()
+                            else:
+                                pairdf_sel = pairdf
+                            if p_index == 0: 
+                                obs_x, label_x = splots.make_slr_plot(pairdf_sel
+                                                                     )
+                                
+                            splots.make_slr_plot(
+                                pairdf,
+                                column_o=obsvar,
+                                label_o=p.obs,
+                                column_m=modvar,
+                                label_m=p.model,
+
+                                fig_dict=fig_dict,
+                                text_dict=text_dict,
+                                debug=self.debug
+                            )
+
+
+                            # First for p_index = 0 create the obs box plot data array.
+                            if p_index == 0:
+                                comb_bx, label_bx = splots.calculate_boxplot(pairdf_sel, pairdf_reg, column=obsvar,   
+                                                                                       label=p.obs, plot_dict=obs_dict)
+                            # Then add the models to this dataarray.
+                            comb_bx, label_bx = splots.calculate_boxplot(pairdf_sel, pairdf_reg, column=modvar, label=p.model,  
+                                                                                    plot_dict=plot_dict, comb_bx=comb_bx,
+                                                                                    label_bx=label_bx)
+                            # For the last p_index make the plot.
+                            if p_index == len(pair_labels) - 1:
+                                splots.make_boxplot(
+                                    comb_bx,
+                                    label_bx,
+                                    ylabel=use_ylabel,
+                                    vmin=vmin,
+                                    vmax=vmax,
+                                    outname=outname,
+                                    domain_type=domain_type,
+                                    domain_name=domain_name,
+                                    plot_dict=obs_dict,
+                                    fig_dict=fig_dict,
+                                    text_dict=text_dict,
+                                    debug=self.debug,
+                                    set_stat_sig=False
+                                )
+                                #Clear info for next plot.
+                                del (comb_bx, label_bx, fig_dict, plot_dict, text_dict, obs_dict, obs_plot_dict)   
+
 
         # Restore figure count warning
         plt.rcParams["figure.max_open_warning"] = initial_max_fig

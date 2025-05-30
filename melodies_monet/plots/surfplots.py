@@ -16,6 +16,8 @@ from matplotlib.colors import ListedColormap
 from monet.util.tools import get_epa_region_bounds as get_epa_bounds 
 import math
 from ..plots import savefig
+from scipy.stats import ttest_ind
+from statannotations.Annotator import Annotator
 
 def make_24hr_regulatory(df, col=None):
     """Calculates 24-hour averages
@@ -173,7 +175,7 @@ def map_projection(m, *, model_name=None):
     elif mod == 'rrfs':
         proj = ccrs.LambertConformal(
             central_longitude=m.obj.cen_lon, central_latitude=m.obj.cen_lat)
-    elif mod in {'cesm_fv', 'cesm_se', 'raqms'}:
+    elif mod in {"ufschem", 'cesm_fv', 'cesm_se', 'raqms'}: # added ufs-chem here 
         proj = ccrs.PlateCarree()
     elif mod == 'random':
         proj = ccrs.PlateCarree()
@@ -494,6 +496,53 @@ def make_timeseries(df, df_reg=None, column=None, label=None, ax=None, avg_windo
         else:
             ax.set_title(domain_name,fontweight='bold',**text_kwargs)
     return ax
+
+def make_slr_plot(obs_x, mod_y, column = None, ax = None, ylabel=None,
+                    plot_dict=None, fig_dict=None, text_dict=None,debug=False, **kwargs):
+    """Creates a SLR plot with the dependent variable on the y-axis and independent variable on the x-axis
+
+    Parameters
+    ----------
+    """
+
+    if debug is False:
+        plt.ioff()
+    #First define items for all plots
+    #set default text size
+    def_text = dict(fontsize=14)
+    if text_dict is not None:
+        text_kwargs = {**def_text, **text_dict}
+    else:
+        text_kwargs = def_text
+    # set ylabel to column if not specified.
+    if ylabel is None:
+        ylabel = column
+    if label is not None:
+        plot_dict['label'] = label
+
+    #scale the fontsize for the x and y labels by the text_kwargs
+    plot_dict['fontsize'] = text_kwargs['fontsize']*0.8
+    #Then, if no plot has been created yet, create a plot and plot the obs.
+    if ax is None: 
+        #First define the colors for the observations.
+        obs_dict = dict(color='k', linestyle='-',marker='*', linewidth=1.2, markersize=6.)
+        if plot_dict is not None:
+            #Whatever is not defined in the yaml file is filled in with the obs_dict here.
+            plot_kwargs = {**obs_dict, **plot_dict}
+        else:
+            plot_kwargs = obs_dict
+        # create the figure
+        if fig_dict is not None:
+            f,ax = plt.subplots(**fig_dict)    
+        else: 
+            f,ax = plt.subplots(figsize=(10,6))
+        # plot the line
+    else:
+        plot_kwargs = { **dict(linestyle='-', marker='*', linewidth=1.2, markersize=6.), **plot_dict}
+    time = df.index
+    df_plot_group = df.groupby(time.hour)
+
+    
     
 def make_diurnal_cycle(df, column=None, label=None, ax=None, avg_window=None, ylabel=None,
                     vmin = None, vmax = None,
@@ -558,6 +607,7 @@ def make_diurnal_cycle(df, column=None, label=None, ax=None, avg_window=None, yl
         plot_dict['label'] = label
     if vmin is not None and vmax is not None:
         plot_dict['ylim'] = [vmin,vmax]
+
     #scale the fontsize for the x and y labels by the text_kwargs
     plot_dict['fontsize'] = text_kwargs['fontsize']*0.8
     #Then, if no plot has been created yet, create a plot and plot the obs.
@@ -956,6 +1006,10 @@ def calculate_boxplot(df, df_reg=None, column=None, label=None, plot_dict=None, 
 
     return comb_bx, label_bx
 
+def calculate_slr(df, df_reg=None, column=None, label=None, plot_dict=None, obs_x = None, mod_y = None, label_x = None, label_y = None):
+    """Puts df in an acceptable format for SLR calculations
+    """
+
 def calculate_multi_boxplot(df, df_reg=None, region_name= None,column=None, label=None, plot_dict=None, comb_bx = None, label_bx = None): 
     """Combines data into acceptable format for box-plot
     
@@ -1021,7 +1075,7 @@ def calculate_multi_boxplot(df, df_reg=None, region_name= None,column=None, labe
 
 def make_boxplot(comb_bx, label_bx, ylabel = None, vmin = None, vmax = None, outname='plot',
                  domain_type=None, domain_name=None,
-                 plot_dict=None, fig_dict=None,text_dict=None,debug=False):
+                 plot_dict=None, fig_dict=None,text_dict=None,debug=False, set_stat_sig=False):
 
     """Creates box-plot. 
 
@@ -1106,6 +1160,30 @@ def make_boxplot(comb_bx, label_bx, ylabel = None, vmin = None, vmax = None, out
     ax.set_xlabel('')
     ax.set_ylabel(ylabel,fontweight='bold',**text_kwargs)
     ax.tick_params(labelsize=text_kwargs['fontsize']*0.8)
+
+    if set_stat_sig is not None:
+        # statistical significance of the means 
+        p_values = []
+        
+        pairs = [(g1, g2) for i, g1 in enumerate(order_box) for g2 in order_box[i+1:]]
+    
+        for g1, g2 in pairs: 
+            vals1 = pd.melt(comb_bx)[pd.melt(comb_bx)["variable"] == g1]["value"]
+            vals2 = pd.melt(comb_bx)[pd.melt(comb_bx)["variable"] == g2]["value"]
+           # print(vals1)
+           # print(vals2)
+            stat, p = ttest_ind(vals1, vals2) #Calculate the T-test for the means of two independent samples of scores.
+            p_values.append(p)
+            print(p_values)
+        
+        # add *, **, and *** 
+        ax = plt.gca()
+        annotator = Annotator(ax, pairs, data=pd.melt(comb_bx), x='variable', y='value', order=order_box)
+        # for more than 2 violin plots/boxplots, you can use pairs = [] to specify how the stat sig test is done.
+        
+        annotator.configure(test=None, text_format='star', loc='inside', verbose=2, line_offset_to_group=-0.15, fontsize = text_kwargs["fontsize"]) 
+        annotator.set_pvalues_and_annotate(p_values) 
+    
     if domain_type is not None and domain_name is not None:
         if domain_type == 'epa_region':
             ax.set_title('EPA Region ' + domain_name,fontweight='bold',**text_kwargs)
@@ -1242,7 +1320,7 @@ def make_multi_boxplot(comb_bx, label_bx,region_bx,region_list = None, model_nam
             ax.set_title(domain_name,fontweight='bold',**text_kwargs)
     if vmin is not None and vmax is not None:
         ax.set_ylim(ymin = vmin, ymax = vmax)
-    
+
     plt.tight_layout()
     savefig(outname + '.png', loc=4, logo_height=100)
 

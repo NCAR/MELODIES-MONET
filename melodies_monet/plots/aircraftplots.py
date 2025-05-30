@@ -712,7 +712,6 @@ def make_vertprofile(df, column=None, label=None, ax=None, bins=None, altitude_v
         median_line_df = pd.DataFrame(data={'median': median.values, 'binmidpoint': binmidpoint.values})
         ax = median_line_df.plot(x='median', y='binmidpoint', ax=ax, legend=True, **plot_dict)
         
-    
     if interquartile_style == 'box':
         # Add text to legend (adjust the x and y coordinates to place the text below the legend)
         plt.text(1.12, 0.7, 'Bounds of box: Interquartile range\nWhiskers: 10th and 90th percentiles', transform=ax.transAxes, fontsize=text_kwargs['fontsize']*0.8)
@@ -1007,15 +1006,17 @@ def make_violin_plot(comb_violin, label_violin, outname='plot',
     for g1, g2 in pairs: 
         vals1 = melted_comb_violin[melted_comb_violin["group"] == g1]["value"]
         vals2 = melted_comb_violin[melted_comb_violin["group"] == g2]["value"]
-        print(vals1)
-        print(vals2)
-        stat, p = ttest_ind(vals1, vals2)
+       # print(vals1)
+       # print(vals2)
+        stat, p = ttest_ind(vals1, vals2) #Calculate the T-test for the means of two independent samples of scores.
         p_values.append(p)
-        print(p_values)
+       # print(p_values)
 
     # add *, **, and *** 
+    ax = plt.gca()
     annotator = Annotator(ax, pairs, data=melted_comb_violin, x='group', y='value', order=order)
-    annotator.configure(test=None, text_format='star', loc='outside', verbose=2)
+    # for more than 2 violin plots/boxplots, you can use pairs = [] to specify how the stat sig test is done. 
+    annotator.configure(test=None, text_format='star', loc='inside', verbose=2, line_offset_to_group=-0.15, fontsize = text_kwargs["fontsize"]) 
     annotator.set_pvalues_and_annotate(p_values)
     
     # Set y-axis limits if provided

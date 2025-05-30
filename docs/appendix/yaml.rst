@@ -592,4 +592,14 @@ observation label is first and the model label is second
      only look at values at the beginning of each hour. Set 'times' to ''
      if all times should be used. This calculation occurs 
      over the entire analysis window and prior to calculating the regulatory metrics.
+    * **set_stat_sig:** This option allows the user to calculate an independent
+      t-test between two independent samples. The variances are assumed to be equal.
+      This option is currently only available for the UFS-CHEM airnow boxplots. 
+      Example output: p-value annotation legend:
+      ns: 5.00e-02 < p <= 1.00e+00
+       *: 1.00e-02 < p <= 5.00e-02
+      **: 1.00e-03 < p <= 1.00e-02
+     ***: 1.00e-04 < p <= 1.00e-03
+    ****: p <= 1.00e-04
+
 
