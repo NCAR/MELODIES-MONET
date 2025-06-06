@@ -570,14 +570,16 @@ class model:
             self.obj = mio.models._wrfchem_mm.open_mfdataset(self.files,**self.mod_kwargs)
         elif 'rrfs' in self.model.lower():
             print('**** Reading RRFS-CMAQ model output...')
+            from monetio import models
             if self.files_pm25 is not None:
                 self.mod_kwargs.update({'fname_pm25' : self.files_pm25})
             self.mod_kwargs.update({'var_list' : list_input_var})
-            self.obj = mio.models._rrfs_cmaq_mm.open_mfdataset(self.files,**self.mod_kwargs) # add liam 
-        elif 'ufschem' in self.model.lower(): # added ufs-chem
+            self.obj = models._rrfs_cmaq_mm.open_mfdataset(self.files,**self.mod_kwargs)
+        elif 'ufschem' in self.model.lower(): # added ufs-chem 
             print('**** Reading UFS-CHEM model output...')
+            from monetio import models
             self.mod_kwargs.update({'var_list' : list_input_var})
-            self.obj = mio.models._ufschem_v1.open_mfdataset(self.files,**self.mod_kwargs)
+            self.obj = models._ufschem_v1.open_mfdataset(self.files,**self.mod_kwargs)
         elif 'gsdchem' in self.model.lower():
             print('**** Reading GSD-Chem model output...')
             if len(self.files) > 1:
@@ -1611,9 +1613,12 @@ class analysis:
 
             #read-in special settings for multi-boxplot
             if plot_type == 'multi_boxplot':
-                region_name = grp_dict['region_name'] 
-                region_list = grp_dict['region_list']
-                model_name_list = grp_dict['model_name_list']     
+                interval_list = grp_dict.get('interval_list', None)
+                interval_var = grp_dict.get('interval_var', None)
+                interval_labels = grp_dict.get('interval_labels', None)
+                region_name = grp_dict.get('region_name', None)
+                region_list = grp_dict.get('region_list', None)
+                model_name_list = grp_dict.get('model_name_list', None)     
 
             #read-in special settings for ozone sonde related plots
             if plot_type in {'vertical_single_date', 'vertical_boxplot_os', 'density_scatter_plot_os'}:
@@ -2532,13 +2537,26 @@ class analysis:
                             # First for p_index = 0 create the obs box plot data array.
                             
                             if p_index == 0:
-                                comb_bx, label_bx,region_bx = splots.calculate_multi_boxplot(pairdf, pairdf_reg,region_name=region_name, column=obsvar, 
-                                                                             label=p.obs, plot_dict=obs_dict)
+                                comb_bx, label_bx,region_bx = splots.calculate_multi_boxplot(pairdf,
+                                                                                             pairdf_reg,
+                                                                                             region_name=region_name, 
+                                                                                             interval_var=interval_var,
+                                                                                             interval_list=interval_list,
+                                                                                             column=obsvar, 
+                                                                                             label=p.obs,
+                                                                                             plot_dict=obs_dict)
                                 
                             # Then add the models to this dataarray.
-                            comb_bx, label_bx,region_bx = splots.calculate_multi_boxplot(pairdf, pairdf_reg, region_name= region_name,column=modvar, label=p.model, 
-                                                                         plot_dict=plot_dict, comb_bx=comb_bx,
-                                                                         label_bx=label_bx)
+                            comb_bx, label_bx,region_bx = splots.calculate_multi_boxplot(pairdf, 
+                                                                                         pairdf_reg, 
+                                                                                         region_name=region_name,
+                                                                                         interval_var=interval_var,
+                                                                                         interval_list=interval_list,
+                                                                                         column=modvar, 
+                                                                                         label=p.model, 
+                                                                                         plot_dict=plot_dict, 
+                                                                                         comb_bx=comb_bx,
+                                                                                         label_bx=label_bx)
                             
                             # For the last p_index make the plot.
                             if p_index == len(pair_labels) - 1:                             
@@ -2547,6 +2565,8 @@ class analysis:
                                     label_bx,
                                     region_bx,  
                                     region_list = region_list,
+                                    region_name=region_name,
+                                    interval_labels=interval_labels,
                                     model_name_list=model_name_list,
                                     ylabel=use_ylabel,
                                     vmin=vmin,

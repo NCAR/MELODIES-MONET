@@ -14,6 +14,7 @@ sns.set_context('paper')
 from monet.plots.taylordiagram import TaylorDiagram as td
 from matplotlib.colors import ListedColormap
 from monet.util.tools import get_epa_region_bounds as get_epa_bounds 
+from matplotlib.colors import TwoSlopeNorm, ListedColormap, LinearSegmentedColormap, Normalize
 import math
 from ..plots import savefig
 from scipy.stats import ttest_ind
@@ -497,53 +498,151 @@ def make_timeseries(df, df_reg=None, column=None, label=None, ax=None, avg_windo
             ax.set_title(domain_name,fontweight='bold',**text_kwargs)
     return ax
 
-def make_slr_plot(obs_x, mod_y, column = None, ax = None, ylabel=None,
-                    plot_dict=None, fig_dict=None, text_dict=None,debug=False, **kwargs):
-    """Creates a SLR plot with the dependent variable on the y-axis and independent variable on the x-axis
+def make_scatter_density_plot(df, mod_var=None, obs_var=None, ax=None, color_map='viridis', xlabel=None, ylabel=None, title=None, fill=False, vmin_x=None, vmax_x=None, vmin_y=None, vmax_y=None, outname='plot', **kwargs):
+    
+    """  
+    Creates a scatter density plot for the specified column (variable) in the paired DataFrame (df).
 
     Parameters
-    ----------
+    --------
+
+    df: dataframe
+        Paired DataFrame containing the model and observation data to plot
+    obs_var: str
+        obs variable name in mapped pairs
+    mod_var: str
+        model variable name in mapped pairs
+    ax: Matplotlib axis from a previous occurrence to overlay obs and model results on the same plot
+    color_map: str
+        Colormap for the density (optional)
+    xlabel: str
+        Label for the x-axis (optional)
+    ylabel: str
+        Label for the y-axis (optional)
+    title: str
+        Title for the plot (optional)
+    fill: bool
+        Fill set to True for seaborn kde plot
+    outname : str
+        File location and name of plot.
+    **kwargs: dict 
+        Additional keyword arguments for customization
+
+    Returns
+    -------
+    ax : ax
+        Matplotlib ax such that driver.py can iterate to overlay multiple models on the same plot.
     """
-
-    if debug is False:
-        plt.ioff()
-    #First define items for all plots
-    #set default text size
-    def_text = dict(fontsize=14)
-    if text_dict is not None:
-        text_kwargs = {**def_text, **text_dict}
+        
+        # Create a custom colormap based on color_map options in yaml or just use default colormap id color_map is just a string (e.g. viridis)
+        # Determine the normalization based on vcenter
+    vcenter = kwargs.get('vcenter', None)
+        
+    if vcenter is not None:
+        norm = TwoSlopeNorm(vcenter=vcenter, vmin=vmin_x, vmax=vmax_x)
     else:
-        text_kwargs = def_text
-    # set ylabel to column if not specified.
-    if ylabel is None:
-        ylabel = column
-    if label is not None:
-        plot_dict['label'] = label
+        norm = None  # This means we'll use a default linear normalization
 
-    #scale the fontsize for the x and y labels by the text_kwargs
-    plot_dict['fontsize'] = text_kwargs['fontsize']*0.8
-    #Then, if no plot has been created yet, create a plot and plot the obs.
-    if ax is None: 
-        #First define the colors for the observations.
-        obs_dict = dict(color='k', linestyle='-',marker='*', linewidth=1.2, markersize=6.)
-        if plot_dict is not None:
-            #Whatever is not defined in the yaml file is filled in with the obs_dict here.
-            plot_kwargs = {**obs_dict, **plot_dict}
-        else:
-            plot_kwargs = obs_dict
-        # create the figure
-        if fig_dict is not None:
-            f,ax = plt.subplots(**fig_dict)    
-        else: 
-            f,ax = plt.subplots(figsize=(10,6))
-        # plot the line
+    extensions = kwargs.get('extensions', None)  # Extract extensions for the colorbar
+    
+    # Check if the color_map key from the YAML file provides a dictionary 
+    # (indicating a custom colormap) or just a string (indicating a built-in colormap like 'magma', 'viridis' etc.).
+    color_map_config = color_map
+
+    #print(f"Color Map Config: {color_map_config}") #Debugging
+    
+    if isinstance(color_map_config, dict):
+        colors = color_map_config['colors']
+        over = color_map_config.get('over', None)
+        under = color_map_config.get('under', None)
+        
+        cmap = (mpl.colors.ListedColormap(colors)
+                .with_extremes(over=over, under=under))
     else:
-        plot_kwargs = { **dict(linestyle='-', marker='*', linewidth=1.2, markersize=6.), **plot_dict}
-    time = df.index
-    df_plot_group = df.groupby(time.hour)
+        cmap = plt.get_cmap(color_map_config)
+
+    # Debug print statement to check the colormap configuration
+    #print(f"Using colormap: {cmap}") #Debugging
+
+    if isinstance(cmap, mpl.colors.ListedColormap):
+        cmap = LinearSegmentedColormap.from_list("custom", cmap.colors)
+
+    # Check if 'ax' is None and create a new subplot if needed
+    if ax is None:
+        fig, ax = plt.subplots()
+        
+    x_data = df[mod_var]
+    y_data = df[obs_var]
+
+    if fill:  # For KDE plot
+        #print("Generating KDE plot...")
+    
+        # Check the type of the colormap and set Seaborn's palette accordingly
+        if isinstance(cmap, mpl.colors.ListedColormap):
+            sns.set_palette(cmap.colors)
+        elif isinstance(cmap, mpl.colors.LinearSegmentedColormap):
+            # If it's a LinearSegmentedColormap, extract N colors from the colormap
+            N = 256
+            sns.set_palette([cmap(i) for i in range(N)])
+    
+        # Create the KDE fill plot using seaborn
+        plot = sns.kdeplot(x=x_data.dropna(), y=y_data.dropna(), cmap=cmap, norm=norm, fill=True, ax=ax, 
+                           **{k: v for k, v in kwargs.items() if k in sns.kdeplot.__code__.co_varnames})
+        colorbar_label = 'Density'
+        
+        # Get the QuadMesh object from the Axes for the colorbar and explicitly set its colormap
+        mappable = ax.collections[0]
+        mappable.set_cmap(cmap)
+        
+    else:  # For scatter plot using matplotlib
+        print("Generating scatter plot...")
+        
+        plot = plt.scatter(x_data, y_data, c=y_data, cmap=cmap, norm=norm, marker='o', 
+                           **{k: v for k, v in kwargs.items() if k in plt.scatter.__code__.co_varnames})
+        units = ylabel[ylabel.find("(")+1: ylabel.find(")")]
+        colorbar_label = units  # Units for scatter plot
+        mappable = plot
+        
+        #if reg_line is not None: 
+        coeffs=np.polyfit(x_data, y_data, 1)
+        regression_line=np.poly1d(coeffs)
+        x_line=np.linspace(np.min(x_data), np.max(x_data), 100)
+        y_line=regression_line(x_line)
+
+        plt.plot(x_line, y_line, color="black", ls="--", label="Best Fit Line")
+        plt.legend()
+    
+    # Set plot labels and titles
+    if xlabel:
+        plt.xlabel(xlabel, fontweight='bold')
+    if ylabel:
+        plt.ylabel(ylabel, fontweight='bold')
+    if title:
+        plt.title(title, fontweight='bold')
+    if vmin_x is not None:
+        plt.xlim(left=vmin_x)
+    if vmax_x is not None:
+        plt.xlim(right=vmax_x)
+    if vmin_y is not None:
+        plt.ylim(bottom=vmin_y)
+    if vmax_y is not None:
+        plt.ylim(top=vmax_y)
 
     
-    
+    # Handle the colorbar using the mappable object
+    if extensions:
+        cbar = plt.colorbar(mappable, extend='both', ax=ax)  # Extends the colorbar at both ends
+    else:
+        cbar = plt.colorbar(mappable, ax=ax)
+    cbar.set_label(colorbar_label)
+
+    # Save the scatter density plot for the current pair immediately
+    print(f"Saving scatter density plot to {outname}...")
+    savefig(f"{outname}", loc=4, logo_height=100, dpi=300)
+    plt.show()
+
+    return ax
+
 def make_diurnal_cycle(df, column=None, label=None, ax=None, avg_window=None, ylabel=None,
                     vmin = None, vmax = None,
                     domain_type=None, domain_name=None,
@@ -1006,11 +1105,7 @@ def calculate_boxplot(df, df_reg=None, column=None, label=None, plot_dict=None, 
 
     return comb_bx, label_bx
 
-def calculate_slr(df, df_reg=None, column=None, label=None, plot_dict=None, obs_x = None, mod_y = None, label_x = None, label_y = None):
-    """Puts df in an acceptable format for SLR calculations
-    """
-
-def calculate_multi_boxplot(df, df_reg=None, region_name= None,column=None, label=None, plot_dict=None, comb_bx = None, label_bx = None): 
+def calculate_multi_boxplot(df, df_reg=None, region_name= None, interval_list=None, interval_var=None, interval_labels=None, column=None, label=None, plot_dict=None, comb_bx = None, label_bx = None): 
     """Combines data into acceptable format for box-plot
     
     Parameters
@@ -1058,20 +1153,50 @@ def calculate_multi_boxplot(df, df_reg=None, region_name= None,column=None, labe
     #For all, a column to the dataframe and append the label info to the list.
     plot_kwargs['column'] = column
     plot_kwargs['label'] = label
-    if df_reg is not None:
-        comb_bx[label] = df_reg[column+'_reg']
-
-        df_short = df[['siteid','epa_region']].drop_duplicates()
-        df_reg_epa = df_reg.merge(df_short[['siteid','epa_region']],how='left',on='siteid')
-        region_bx['set_regions'] = df_reg_epa["epa_region"]
-
-    else:
-        comb_bx[label] = df[column] 
-        region_bx['set_regions']=df[region_name[0]]   
+    
+    if region_name is not None and interval_var is not None:
+        print("Warning! Region name and interval name were both provided. Defaulted to region_name. Plotting proceeded.")
+        
+    if region_name is not None: 
+        if df_reg is not None:
+            comb_bx[label] = df_reg[column+'_reg']
+    
+            df_short = df[['siteid','epa_region']].drop_duplicates()
+            df_reg_epa = df_reg.merge(df_short[['siteid','epa_region']],how='left',on='siteid')
+            region_bx['set_regions'] = df_reg_epa["epa_region"]
+        else:
+            comb_bx[label] = df[column] 
+            region_bx['set_regions']=df[region_name[0]]
+            
+    elif interval_var is not None: 
+        if df_reg is not None:
+            comb_bx[label] = df_reg[column+'_reg']
+            df_short = df[['siteid','epa_region']].drop_duplicates()
+            df_reg_epa = df_reg.merge(df_short[['siteid','epa_region']],how='left',on='siteid')
+            region_bx['set_regions'] = df_reg_epa["epa_region"]
+            region_bx['interval_labels'] = pd.Series([np.nan] * len(region_bx['set_regions']), index=region_bx.index)
+        else:
+            comb_bx[label] = df[column] 
+            df['interval_labels'] = pd.cut(
+                df[interval_var], 
+                bins = interval_list,
+                labels=interval_labels,
+                include_lowest=True, 
+                right=False
+            ) 
+            
+            region_bx['set_regions'] = df['interval_labels']
+            
+            # add a column for the temperature interval list 
+            #print(df) 
+            #print(region_bx["set_regions"])
+       #elif:
+            #comb_bx[label] = df[interval_labels] 
+            #region_bx['set_regions']=df[region_name[0]]
+            
     label_bx.append(plot_kwargs)
     
     return comb_bx, label_bx,region_bx             
-
 
 def make_boxplot(comb_bx, label_bx, ylabel = None, vmin = None, vmax = None, outname='plot',
                  domain_type=None, domain_name=None,
@@ -1195,7 +1320,7 @@ def make_boxplot(comb_bx, label_bx, ylabel = None, vmin = None, vmax = None, out
     plt.tight_layout()
     savefig(outname + '.png', loc=4, logo_height=100)
   
-def make_multi_boxplot(comb_bx, label_bx,region_bx,region_list = None, model_name_list=None,ylabel = None, vmin = None, vmax = None, outname='plot',  
+def make_multi_boxplot(comb_bx, label_bx,region_bx,region_list = None, region_name=None, interval_labels=None, interval_var=None, interval_list=None, model_name_list=None,ylabel = None, vmin = None, vmax = None, outname='plot',  
                        domain_type=None, domain_name=None,
                        plot_dict=None, fig_dict=None,text_dict=None,debug=False):
     
@@ -1293,8 +1418,9 @@ def make_multi_boxplot(comb_bx, label_bx,region_bx,region_list = None, model_nam
     sns.set_style("whitegrid")
     sns.set_style("ticks")
     len_combx = len(comb_bx.columns)
-    
+
     data_obs = comb_bx[comb_bx.columns[0]].to_frame().rename({comb_bx.columns[0]:'Value'},axis=1)
+    #print(data_obs)
     data_obs['model'] = model_name_list[0]
     data_obs['Regions'] = region_bx['set_regions'].values
     to_concat = []
@@ -1305,14 +1431,35 @@ def make_multi_boxplot(comb_bx, label_bx,region_bx,region_list = None, model_nam
         data_model['model'] = model_name_list[i]
         data_model['Regions'] = region_bx['set_regions'].values
         to_concat.append(data_model[['Value','model','Regions']])
-
+    
     tdf =pd.concat(to_concat)
-    acro = region_list
-    sns.boxplot(x='Regions',y='Value',hue='model',data=tdf.loc[tdf.Regions.isin(acro)],order=acro,showfliers=False,**boxplot_kwargs)
+    #print(tdf)
+
+    if region_list is not None:
+        acro = region_list
+        x_data = "Regions"
+        #data_obs['Regions'] = region_bx['set_regions'].values 
+        #data_plot = tdf.loc[tdf.Regions.isin(acro)]
+    else:
+        # needed to convert a list of strings to a string so the data would populate
+        tdf['Regions'] = tdf['Regions'].astype(str)
+        acro = [str(lab) for lab in interval_labels]
+        #print("tdf['Regions'].unique():", tdf['Regions'].unique())
+        #print("acro:", acro)
+        x_data = "Regions"
+        
+    sns.boxplot(x=x_data,
+                y='Value',
+                hue='model',
+                data=tdf.loc[tdf.Regions.isin(acro)],
+                order=acro,
+                showfliers=False,**boxplot_kwargs)
+
     ax.set_xlabel('')
     ax.set_ylabel(ylabel,fontweight='bold',**text_kwargs)
     ax.tick_params(labelsize=text_kwargs['fontsize']*0.8)
     plt.legend(fontsize=text_kwargs['fontsize']*0.8)
+
     if domain_type is not None and domain_name is not None:
         if domain_type == 'epa_region':
             ax.set_title('EPA Region ' + domain_name,fontweight='bold',**text_kwargs)
@@ -1320,10 +1467,9 @@ def make_multi_boxplot(comb_bx, label_bx,region_bx,region_list = None, model_nam
             ax.set_title(domain_name,fontweight='bold',**text_kwargs)
     if vmin is not None and vmax is not None:
         ax.set_ylim(ymin = vmin, ymax = vmax)
-
+    
     plt.tight_layout()
     savefig(outname + '.png', loc=4, logo_height=100)
-
 
 def scorecard_step1_combine_df(df, df_reg=None, region_name=None, urban_rural_name=None,column=None, label=None, plot_dict=None, comb_bx = None, label_bx = None):
     """Combines data into acceptable format for box-plot
