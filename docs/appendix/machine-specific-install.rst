@@ -7,22 +7,9 @@ NCAR HPC Derecho/Casper
 Below are specific recipes for getting started with MELODIES MONET
 on the NCAR HPC, Derecho/Casper.
 
-**Official NCAR JupyterHub kernel**
-
-One option is to use the "melodies-monet" kernel [#ncar_jhub_kernel]_ on the NCAR JupyterHub.
-
-#. Navigate to https://jupyterhub.hpc.ucar.edu in your web browser.
-#. Select "Production" and log in with your NCAR CIT credentials.
-#. Start a server.
-#. In the Notebook section of the Launcher, select "melodies-monet"
-   to create a new notebook using the kernel.
-
-Since you don't have to install anything yourself, this is the easiest way to get started.
-
 **Personal conda environment**
 
-Another option is to use conda to create your own MELODIES MONET installation
-in a conda environment.
+Use conda to create your own MELODIES MONET installation in a conda environment.
 This creates a "stand-alone" instance 
 of interdependent packages that will not interfere with your access to the main 
 installation of Python on the system.
@@ -36,10 +23,24 @@ Or,
 `install your own copy <https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html>`__
 of Miniconda or Anaconda.
 
-Once you have conda, you are ready to install MELODIES MONET.
 If you plan to modify the MELODIES MONET or MONET/MONETIO
 codebases, follow the :ref:`dev install instructions <dev-install-instructions>`.
 Otherwise, follow the :ref:`user install instructions <user-install-instructions>`.
+
+.. note::
+   The easiest way of using MELODIES-MONET in Casper/Derecho is by using
+   `NSF-NCAR's JupyterHub <https://jupyterhub.hpc.ucar.edu/>`__.
+   Make sure to install `ipykernel`, which will let you select your newly installed MELODIES MONET
+   environment in the JupyterHub
+   
+   If you are uncertain whether you have it, run::
+
+       $ module load conda/latest
+       $ conda activate melodies-monet
+       $ conda install -c conda-forge ipykernel
+
+   Now, when opening the JupyterHub, you should be able to select the melodies-monet kernel you created.
+
 
 NOAA HPC Hera
 -------------
@@ -124,8 +125,5 @@ environment for running and developing MELODIES MONET.
         $ conda install -c conda-forge esmf
         $ conda install -c conda-forge monet
         $ conda install -c conda-forge monetio    
-
-
-.. [#ncar_jhub_kernel] Maintained by NCAR CISL and members of the MELODIES MONET development team.
 
 .. [#hera_no_pypi] Recent as of 12-Apr-2022. See :issue:`79`.
