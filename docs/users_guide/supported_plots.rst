@@ -99,7 +99,7 @@ Surface Evaluation
 
    **Rose plot** - Wind rose if provide wind speed or polution rose if you provide another variable. In the wind rose plots, calm winds are plotted as an inner circle for wind direction and data is removed for pollution rose plots based on the threshold set in your yaml file.
 
-   **Diurnal plot** - Plot comparing one or more model results with one observation (y-axis) versus time (x-axis) from 0-24 over the analysis window with options to specify the domain, time (local or UTC), and averaging window.
+   **Diurnal plot** - Plot comparing one or more model results with one observation (y-axis) versus time (x-axis) from 0--24 over the analysis window with options to specify the domain, time (local or UTC), and averaging window.
 
 Please refer to the
 `MELODIES MONET project board <https://github.com/orgs/NCAR/projects/150/>`__ 
