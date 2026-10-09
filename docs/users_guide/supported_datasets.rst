@@ -80,7 +80,7 @@ Available now:
    * `OpenAQ <https://openaq.org/>`_ - Global, aggregated, harmonized public air quality data hosted by OpenAQ
 
 Under Development:
-   * `IMPROVE <http://vista.cira.colostate.edu/Improve/>`_ - Interagency Monitoring of Protected Visual Environments
+   * `IMPROVE <https://vista.cira.colostate.edu/Improve/>`_ - Interagency Monitoring of Protected Visual Environments
    * `CRN <https://www.ncdc.noaa.gov/crn/>`_  - U.S. Climate Reference Network 
    * `TOLNet <https://www-air.larc.nasa.gov/missions/TOLNet/>`_ - Tropospheric Ozone Lidar Network
    * `CEMS <https://www.epa.gov/emc/emc-continuous-emission-monitoring-systems/>`_ - Air Emission Measurement Center (EMC) Continuous Emission Monitoring System
