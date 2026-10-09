@@ -46,7 +46,7 @@ Supported Models
      - Yes
      - Needs testing
      - TEMPO, MOPITT
-   * - `RAQMS <http://raqms-ops.ssec.wisc.edu/>`_
+   * - `RAQMS <https://raqms-ops.ssec.wisc.edu/>`_
      - Yes
      - Needs testing
      - MOPITT, OMPS
