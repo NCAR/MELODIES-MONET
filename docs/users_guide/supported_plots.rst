@@ -26,7 +26,7 @@ Surface Evaluation
 
    **Diurnal plot** - Plot comparing average daily cycle of one or more model
    results with an observation. X-axis shows the hour of the day (0--24) in local 
-   time or UTC. The y-axis is the variable value.Data from all days within the 
+   time or UTC. The y-axis is the variable value. Data from all days within the 
    selected analysis window are grouped by hour and averaged, producing a single 
    representative 24-hour cycle rather than a continuous chronological time series. 
 
