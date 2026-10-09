@@ -1,0 +1,56 @@
+# This YAML file has been last tested with MELODIES MONET version 1.1.
+# 
+# This is an example file for specifying groups of files to loop over when using .util.tools.loop_pairing()
+#
+# First group for pairings. The name of this group will be the prefix of the saved netcdf files 
+# each top level group will always consist of only 'model' and 'obs' as groups
+'0603_RECAP': # file prefix label to be used when saving this group
+  model: 
+    # under model this will have pairs of [model dataset name as in control file]: [filenames to open]
+    wrfchem_v4.2: '/wrk/qrasool/For_Sean_RECAPwrfout/QindanRECAP_June2021_run_CA4km_fv19_BEIS_1.0xISO_RACM_v4.2.2_racm_berk_vcp_noI_phot_soa_siloxane_ivoc_nald/wrfout_d01_2021-06-0[3,4]*'
+  obs: 
+    # under model this will have pairs of [model dataset name as in control file]: [filenames to open]
+    recap: '/wrk/syoun/RECAPobs/RECAP_Merged_Met_Obs/merged-recap_TO_20210603_NEWCorrectLong.csv'
+# Second group for pairings. The name of this group, 0722, will be the prefix of the saved netcdf files 
+'0608_RECAP': # file prefix label to be used when saving this group
+  model: 
+    # under model this will have pairs of [model dataset name as in control file]: [filenames to open]
+    wrfchem_v4.2: '/wrk/qrasool/For_Sean_RECAPwrfout/QindanRECAP_June2021_run_CA4km_fv19_BEIS_1.0xISO_RACM_v4.2.2_racm_berk_vcp_noI_phot_soa_siloxane_ivoc_nald/wrfout_d01_2021-06-0[8,9]*'
+  obs: 
+    # under model this will have pairs of [model dataset name as in control file]: [filenames to open]
+    recap: '/wrk/syoun/RECAPobs/RECAP_Merged_Met_Obs/merged-recap_TO_20210608_NEWCorrectLong.csv'
+'0609_RECAP': # file prefix label to be used when saving this group
+  model: 
+    # under model this will have pairs of [model dataset name as in control file]: [filenames to open]
+    wrfchem_v4.2: '/wrk/qrasool/For_Sean_RECAPwrfout/QindanRECAP_June2021_run_CA4km_fv19_BEIS_1.0xISO_RACM_v4.2.2_racm_berk_vcp_noI_phot_soa_siloxane_ivoc_nald/wrfout_d01_2021-06-[09,10]*'
+  obs: 
+    # under model this will have pairs of [model dataset name as in control file]: [filenames to open]
+    recap: '/wrk/syoun/RECAPobs/RECAP_Merged_Met_Obs/merged-recap_TO_20210609_NEWCorrectLong.csv'
+'0613_RECAP': # file prefix label to be used when saving this group
+  model: 
+    # under model this will have pairs of [model dataset name as in control file]: [filenames to open]
+    wrfchem_v4.2: '/wrk/qrasool/For_Sean_RECAPwrfout/QindanRECAP_June2021_run_CA4km_fv19_BEIS_1.0xISO_RACM_v4.2.2_racm_berk_vcp_noI_phot_soa_siloxane_ivoc_nald/wrfout_d01_2021-06-1[3,4]*'
+  obs: 
+    # under model this will have pairs of [model dataset name as in control file]: [filenames to open]
+    recap: '/wrk/syoun/RECAPobs/RECAP_Merged_Met_Obs/merged-recap_TO_20210613_NEWCorrectLong.csv'
+'0615_RECAP': # file prefix label to be used when saving this group
+  model: 
+    # under model this will have pairs of [model dataset name as in control file]: [filenames to open]
+    wrfchem_v4.2: '/wrk/qrasool/For_Sean_RECAPwrfout/QindanRECAP_June2021_run_CA4km_fv19_BEIS_1.0xISO_RACM_v4.2.2_racm_berk_vcp_noI_phot_soa_siloxane_ivoc_nald/wrfout_d01_2021-06-1[5,6]*'
+  obs: 
+    # under model this will have pairs of [model dataset name as in control file]: [filenames to open]
+    recap: '/wrk/syoun/RECAPobs/RECAP_Merged_Met_Obs/merged-recap_TO_20210615_NEWCorrectLong.csv'
+'0616_RECAP': # file prefix label to be used when saving this group
+  model: 
+    # under model this will have pairs of [model dataset name as in control file]: [filenames to open]
+    wrfchem_v4.2: '/wrk/qrasool/For_Sean_RECAPwrfout/QindanRECAP_June2021_run_CA4km_fv19_BEIS_1.0xISO_RACM_v4.2.2_racm_berk_vcp_noI_phot_soa_siloxane_ivoc_nald/wrfout_d01_2021-06-1[6,7]*'
+  obs: 
+    # under model this will have pairs of [model dataset name as in control file]: [filenames to open]
+    recap: '/wrk/syoun/RECAPobs/RECAP_Merged_Met_Obs/merged-recap_TO_20210616_NEWCorrectLong.csv'
+'0622_RECAP': # file prefix label to be used when saving this group
+  model: 
+    # under model this will have pairs of [model dataset name as in control file]: [filenames to open]
+    wrfchem_v4.2: '/wrk/qrasool/For_Sean_RECAPwrfout/QindanRECAP_June2021_run_CA4km_fv19_BEIS_1.0xISO_RACM_v4.2.2_racm_berk_vcp_noI_phot_soa_siloxane_ivoc_nald/wrfout_d01_2021-06-2[2,3]*'
+  obs: 
+    # under model this will have pairs of [model dataset name as in control file]: [filenames to open]
+    recap: '/wrk/syoun/RECAPobs/RECAP_Merged_Met_Obs/merged-recap_TO_20210622_NEWCorrectLong.csv'

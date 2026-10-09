@@ -72,6 +72,7 @@ Table of Contents
    users_guide/supported_plots
    users_guide/supported_stats
    users_guide/time_chunking
+   users_guide/satellites/index
    users_guide/gridded_datasets
    users_guide/region_selection
 
@@ -79,12 +80,14 @@ Table of Contents
    :maxdepth: 4
    :caption: Getting Started
 
+   getting_started/how_to_begin
+   getting_started/new_to_python
    getting_started/installation
-   getting_started/software_architecture
    getting_started/downloading_obs
+   getting_started/software_architecture
    getting_started/how_to_run
    getting_started/tutorials
-   getting_started/new_to_python
+
 
 .. toctree::
    :maxdepth: 4
@@ -97,7 +100,7 @@ Table of Contents
 
 .. toctree::
    :maxdepth: 4
-   :caption: Examples
+   :caption: Tutorial Examples
 
    examples/intro_examples
    examples/tutorial-data
@@ -108,7 +111,6 @@ Table of Contents
    examples/airnow_ufschem
    examples/ish_ufschem
    examples/ish_lite_ufschem
-   examples/idealized
    examples/save_paired_data
    examples/read_paired_data
    examples/aircraft_pairing
@@ -116,6 +118,7 @@ Table of Contents
    examples/UWyoming_UFS-CHEM_Pairing
    examples/UWyoming_UFS-CHEM_pairing_loop_read
    examples/ufs-aqm-gml-ozonesonde
+   examples/idealized
 
 .. toctree::
    :maxdepth: 4
@@ -133,6 +136,7 @@ Table of Contents
    cli
    appendix/machine-specific-install
    appendix/yaml
+   appendix/modis_yaml
    appendix/troubleshooting
 
 

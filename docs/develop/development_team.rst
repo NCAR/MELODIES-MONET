@@ -2,7 +2,8 @@ Development Team
 ================
 
 MELODIES MONET development is a collaboration between NOAA Chemical Sciences 
-Laboratory (CSL), NOAA Air Resources Laboratory (ARL), NOAA Global Systems 
+Laboratory (CSL), NOAA Air Resources Laboratory (ARL), NOAA National Weather 
+Service Environmental Modeling Center (NWS EMC), NOAA Global Systems 
 Laboratory (GSL), and NSF NCAR Atmospheric Chemistry Observations and Modeling 
 (ACOM) Laboratory. The representative leads for each organization are below.
 
@@ -10,7 +11,8 @@ Laboratory (GSL), and NSF NCAR Atmospheric Chemistry Observations and Modeling
 Organization     Representative(s)
 ===============  =============================
 NOAA CSL         Rebecca Schwantes
-NOAA ARL         Barry Baker
+NOAA ARL         Zachary Moon
+NOAA NWS EMC     Barry Baker
 NOAA GSL         Jordan Schnell
 NSF NCAR/ACOM    Louisa Emmons, David Fillmore
 ===============  =============================

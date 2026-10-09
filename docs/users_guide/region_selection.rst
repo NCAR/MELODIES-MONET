@@ -30,7 +30,7 @@ An example of the plotting part of an arbitrary plot for eact type of region is 
 
 .. code-block:: yaml
 
-  domain_type: ["all",   "all",   "state_name", "epa_region", "auto-region:giorgi", "custom:box", "custom:polygon", "custom:polygon", "custom:region", "custom:file", "custom:file"]
+  domain_type: ["all",   "all",   "state_name", "epa_region", "auto-region:giorgi", "custom:box", "custom:polygon", "custom:polygon", "custom:defined-region", "custom:file", "custom:file"]
   domain_name: ["CONUS", "model", "CO",          "R8",        "CNA",                "R8box",      "onepoly",        "twopolys",       "colorado",      "denverfile",  "denverurl"]
   domain_info:
     R8box: 

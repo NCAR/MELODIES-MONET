@@ -1,5 +1,13 @@
 #!/bin/bash -l
 
+# NOTE: This script links WRF-Chem output files each storing 6 hours of output for each daily forecast
+# for day 0 at 6Z, 12Z, and 18Z, and day 1 at 0Z. This drops the first 6 hours of each forecast, which
+# is considered spin-up. By linking files in this way, you can link for a full consecutive month into
+# one folder. Please adapt these files as needed if you set up the forecast differently.
+# MELODIES MONET requires no duplicate times and no missing times for the pairing, so after running this
+# script, please confirm that you have linked 24 hours of model data for each calendar day in your analysis
+# time window.
+
 set -x 
 
 case='2021REB'

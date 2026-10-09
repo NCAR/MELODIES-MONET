@@ -1,0 +1,134 @@
+
+#-------------------------------------------------------------------
+# MELODIES-MONET test: TROPOMI L2 NO2 vs CESM-FV 
+# updated 06/15/2026 L.T.
+
+# works with monetio: https://github.com/noaa-oar-arl/monetio - 0.3.2
+# works with (soon to be) melodies-monet v1.1: https://github.com/NCAR/MELODIES-MONET/tree/develop
+
+# works: https://github.com/L12D2/mm_uxarray/tree/backup/asia-aq-satellite-wip/docs/examples/ungridded_support/unstructured_grid_read_uxarray/tropomi_testing/works
+#-------------------------------------------------------------------
+analysis:
+  start_time: '2024-06-30'                 #UTC  
+  end_time:   '2024-06-30 23:59:00'        #UTC
+  output_dir: ./output_tropno2
+  output_dir_save: ./output_tropno2
+  output_dir_read: ./output_tropno2
+  debug: true
+
+  save:
+    paired: {method: 'netcdf', prefix: '20240601', data: all}
+  read:
+    paired:
+      method: 'netcdf'
+      filenames:
+        tropomi_l2_no2_cam-chem-se: ['./output_tropno2/20240101_tropomi_l2_no2_cam-chem-se.nc4']
+        
+  pairing_kwargs:
+    sat_swath_clm:
+      apply_ak: True
+      mod_to_overpass: True
+  
+obs:
+  tropomi_l2_no2:
+    regrid_method: nearest_s2d
+    debug: false
+    filename: /glade/campaign/acom/acom-weather/amirrezaei/tropomi_no2/2024/S5P_OFFL_L2__NO2____20240630T*.nc
+    obs_type: sat_swath_clm
+    sat_type: tropomi_l2_no2
+    sat_method: replace_apriori
+    apply_ak: True
+    variables:
+        qa_value:
+            quality_flag_min: 0.75
+            var_applied: ['nitrogendioxide_tropospheric_column']
+            fillvalue: 9.96921e+36
+        nitrogendioxide_tropospheric_column:
+            scale: 6.022141e+19          # mol/m2 -> molec/cm2
+            fillvalue: 9.96921e+36
+            ylabel_plot: 'NO2 trop. columns'
+            vmin_plot: 0.0
+            vmax_plot: 1.0e+16
+            nlevels_plot: 23
+            regulatory: False
+        averaging_kernel:
+            fillvalue: 9.96921e+36
+        air_mass_factor_total:
+            fillvalue: 9.96921e+36
+        air_mass_factor_troposphere:
+            fillvalue: 9.96921e+36
+        latitude: None
+        longitude: None
+        preslev:                         # pressure of the vertical layer centers
+            tm5_constant_a:
+                group: ['PRODUCT']
+                maximum: 9.0e+36
+            tm5_constant_b:
+                group: ['PRODUCT']
+                maximum: 9.0e+36
+            surface_pressure:
+                group: ['PRODUCT/SUPPORT_DATA/INPUT_DATA/']
+                maximum: 9.0e+36
+            tm5_tropopause_layer_index:
+                group: ['PRODUCT']
+
+          
+model:
+  cam-chem-se:
+    files: 
+      - /glade/derecho/scratch/gaubert/tempo/f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.ref_dust_M1.001/f.e22.FCnudged.01x01.ref_dust_M1.001.cam.h1.2024-06-30-03600.nc
+    mod_type: 'cesm_fv'
+    mod_to_overpass: True
+    mapping:
+      tropomi_l2_no2:
+        NO2: "nitrogendioxide_tropospheric_column"
+    projection: ~
+    mod_kwargs:
+      convert_to_ppb: True
+      surf_only: false
+    plot_kwargs: {color: 'purple', marker: '^', linestyle: 'dotted'}
+
+plots:
+  plot_grp1:
+    type: 'spatial_dist'
+    fig_kwargs: {states: true, counties: false, extent: [-127, -65, 23, 50], cmap: 'Spectral_r'}
+    text_kwargs: {fontsize: 16}
+    domain_type: ['all', 'all']
+    domain_name: ['CONUS', 'model']
+    data: ['tropomi_l2_no2_cam-chem-se']
+    data_proc: {set_axis: false, vmin_plot: 0, vmax_plot: 6.0e+15}
+
+  plot_grp2:
+    type: 'gridded_spatial_bias'
+    fig_kwargs: {states: true, counties: false, cmap: 'RdBu_r'}
+    text_kwargs: {fontsize: 16}
+    domain_type: ['all', 'all']
+    domain_name: ['CONUS', 'model']
+    data: ['tropomi_l2_no2_cam-chem-se']
+    data_proc: {set_axis: false, vdiff_plot: 2.0e+15}
+
+  plot_grp3:
+    type: 'timeseries'
+    fig_kwargs: {figsize: [12, 6]}
+    default_plot_kwargs: {linewidth: 2.0, markersize: 10.}
+    text_kwargs: {fontsize: 18.}
+    domain_type: ["all"]
+    domain_name: ["CONUS"]
+    data: ["tropomi_l2_no2_cam-chem-se"]
+    data_proc: {set_axis: false, vmin_plot: 0, vmax_plot: 6.0e+15}
+
+  plot_grp5:
+    type: 'taylor'
+    data: ["tropomi_l2_no2_cam-chem-se"]
+    domain_type: ['all']
+    domain_name: ['CONUS']
+    data_proc: {set_axis: true, ty_scale: 1.5}
+    default_plot_kwargs: {markersize: 10., marker: 's'}
+    
+stats:
+  stat_list: ["MB", "MdnB", "R2", "RMSE"]
+  round_output: 2
+  output_table: False
+  domain_type: ["all"]
+  domain_name: ["CONUS"]
+  data: ['tropomi_l2_no2_cam-chem-se']

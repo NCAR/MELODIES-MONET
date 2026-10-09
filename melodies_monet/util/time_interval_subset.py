@@ -59,10 +59,32 @@ def subset_mopitt_l3(file_path,timeinterval):
     return interval_files
 
 def subset_MODIS_l2(file_path,timeinterval):
-    '''Dependent on filenaming convention
-       MOD04_L2.AYYYYDDD.HHMM.collection.timestamp.hdf
-       MYD04_L2.AYYYYDDD.HHMM.collection.timestamp.hdf
-    '''
+    """Subset MODIS L2 files to a specified time interval.
+
+    Filters files based on the timestamp encoded in MODIS filenames
+    using hourly granularity. Files are matched using the pattern
+    ``'*M?D04_L2.A{YYYYDDD.HH}*.hdf'``.
+
+    Parameters
+    ----------
+    file_path : str
+        Glob pattern for MODIS HDF files
+        (e.g., ``'/data/MODIS/MOD04_L2.*.hdf'``).
+    timeinterval : list of pandas.Timestamp
+        ``[start, end]`` time bounds.
+
+    Returns
+    -------
+    list of str
+        File paths within the time interval.
+
+    Notes
+    -----
+    Filename convention::
+
+        MOD04_L2.AYYYYDDD.HHMM.collection.timestamp.hdf
+        MYD04_L2.AYYYYDDD.HHMM.collection.timestamp.hdf
+    """
     import pandas as pd
     from glob import glob
     import fnmatch

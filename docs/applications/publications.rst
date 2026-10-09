@@ -10,7 +10,7 @@ MONET version 1.0 (which included what is now MONETIO) development is described 
   Toolkit (MONET) Version 1.0 for Evaluating Atmospheric Transport Models, Atmosphere, 8, 
   no. 11, 210, https://doi.org/10.3390/atmos8110210, 2017.
 
-MELODIES MONET version 1.0, MONET version 2.3.0, and MONETIO version 0.3.0 development are described in the following papers:
+MELODIES MONET version 1.1, MONET version 2.3, and MONETIO version 0.4 development are described in the following papers:
 
 * A paper describing surface and aircraft capabilities is in preparation.
 

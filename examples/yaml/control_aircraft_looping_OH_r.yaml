@@ -1,0 +1,198 @@
+# This YAML file has been last tested with MELODIES MONET version 1.1.
+
+analysis:
+  output_dir:  /wrk/syoun/MM_RECAP_WRF_Chem/Test/Test_full_met # /scratch1/BMC/rcm2/rhs/monet_example/AEROMMA/processed/submit/
+  debug: False
+  
+model:
+  wrfchem_v4.2: # ufsaqm: # model label
+    mod_type: 'wrfchem' # 'rrfs'
+    mod_kwargs: 
+      mech: 'racm_esrl_vcp'
+    radius_of_influence: 4000 # 19500 #meters
+    mapping: #model species name : obs species name
+      recap: #firexaq:
+        'moh':  'x33_0334892273_CH5O_'
+        'eoh':   'x47_0491409302_C2H7O_'
+        'iso':   'x69_0698776245_C5H9_'
+        'act':   'x59_0491409302_C3H7O_'
+        'monoterpenes_tot':   'x137_1324768066_C10H17_'
+        'sesq':   'x205_1950836182_C15H25_'
+        'tol':   'x93_0698776245_C7H9_'
+        'acd':   'x45_0334892273_C2H5O_'
+        'mek':   'x73_0647888184_C4H9O_'
+        'ben':   'x79_0542297363_C6H7_'
+        'bald':   'x107_0491409302_C7H7O_'
+        'xylene_tot_wrf':   'xylene_tot_obs'
+        'csl':   'x109_0647888184_C7H9O_'
+        'nald':   'x143_1430358887_C9H19O_'
+        'macr_mvk_b-isopooh':   'x71_0491409302_C4H7O_'
+        'd4silx':   'x297_0824279785_C8H25O4Si4_'
+        'd5silx':   'x371_1012268066_C10H31O5Si5_'
+        'pcbtf':   'x181_0026397705_C7H4ClF3H_'
+        'pdcbz':   'x146_9762878418_C6Cl2H5_'
+        'oald':   'x129_1273956299_C8H17O_'
+        'ora2':   'x61_0284042358_C2H5O2_'
+        'phen':   'x95_0491409302_C6H7O_'
+        'pyac':   'x89_0233230591_C3H5O3_'
+        'glycr':   'x93_0546188354_C3H9O3_'
+    variables:
+        'pres_pa_mid':
+            rename: pressure_model # name to convert this variable to, use 'pressure_model' for aircraft obs
+            unit_scale: 1 #Opt Scaling factor 
+            unit_scale_method: '*' #Opt Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+        'temperature_k':
+            rename: temp_model # name to convert this variable to
+            unit_scale: 1 #Opt Scaling factor 
+            unit_scale_method: '*' #Opt Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+        'rh':
+            rename: rh_model # name to convert this variable to
+            unit_scale: 1 #Opt Scaling factor 
+            unit_scale_method: '*' #Opt Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+    variable_summing:
+        'monoterpenes_tot':
+            vars: ['api','lim','eclp']
+            ylabel_plot: 'Monoterpenes'
+        'xylene_tot_wrf':
+            vars: ['xyl','xyo']
+            ylabel_plot: 'Xylene'
+        'macr_mvk_b-isopooh':
+            vars: ['macr','mvk','ishpa','ishpb']
+            ylabel_plot: 'MACR/MVK/B-ISOPOOH'
+    projection: null
+obs:
+  recap: # obs label
+    obs_type: aircraft
+    time_var: time
+    resample: '60s' # 
+    variables: #Opt 
+      'x33_0334892273_CH5O_': #'O3_CL_RYERSON':
+        unit_scale: 1 #Opt Scaling factor 
+        unit_scale_method: '*' #Opt Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'x47_0491409302_C2H7O_': #'NO_CL_RYERSON':
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'x69_0698776245_C5H9_': #'NO_CL_RYERSON':
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'x59_0491409302_C3H7O_': #'NO_CL_RYERSON':
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'x137_1324768066_C10H17_': #'NO_CL_RYERSON':
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'x205_1950836182_C15H25_': #'NO_CL_RYERSON':
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'x93_0698776245_C7H9_': #'NO_CL_RYERSON':
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'x45_0334892273_C2H5O_': #'NO_CL_RYERSON':
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'x73_0647888184_C4H9O_': #'NO_CL_RYERSON':
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'x79_0542297363_C6H7_': #'NO_CL_RYERSON':
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'x107_0491409302_C7H7O_': #'NO_CL_RYERSON':
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'x107_0855255127_C8H11_': #'NO_CL_RYERSON':
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'x109_0647888184_C7H9O_': #'NO_CL_RYERSON':
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'x143_1430358887_C9H19O_': #'NO_CL_RYERSON':
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'x71_0491409302_C4H7O_': #'NO_CL_RYERSON':
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'x297_0824279785_C8H25O4Si4_': #'NO_CL_RYERSON':
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'x371_1012268066_C10H31O5Si5_': #'NO_CL_RYERSON':
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'x121_1011734009_C9H13_': #'NO_CL_RYERSON':
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'x181_0026397705_C7H4ClF3H_': #'NO_CL_RYERSON':
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'x146_9762878418_C6Cl2H5_': #'NO_CL_RYERSON':
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'x129_1273956299_C8H17O_': #'NO_CL_RYERSON':
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'x61_0284042358_C2H5O2_': #'NO_CL_RYERSON':
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'x95_0491409302_C6H7O_': #'NO_CL_RYERSON':
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'x89_0233230591_C3H5O3_': #'NO_CL_RYERSON':
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'x93_0546188354_C3H9O3_': #'NO_CL_RYERSON':
+        nan_value: -7777 #NaN #-9999 #-777777 # Opt Set this value to NaN
+        LLOD_value: -8888 #LLOD_setvalue #-9999 #-888888 # Opt Set this value to LLOD_setvalue
+        LLOD_setvalue: 0.0 # Opt Set LLOD_value=LLOD_setvalue, applied AFTER unit_scale and obs_unit
+      'Lat': # 'Latitude_YANG':
+            rename: latitude # name to convert this variable to
+            unit_scale: 1 #Opt Scaling factor 
+            unit_scale_method: '*' #Opt Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+      'Long': # 'Longitude_YANG':
+            rename: longitude # name to convert this variable to
+            unit_scale: 1 #Opt Scaling factor 
+            unit_scale_method: '*' #Opt Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+      'Ps_mb_calc': ##'Pressure_mb_calc': # 'P_BUI':
+            rename: pressure_obs # name to convert this variable to
+            unit_scale: 100 #Opt Scaling factor # 1 mbar or hPa = 100 Pa
+            unit_scale_method: '*' #Opt Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+      'Palt_m_': #'MSL_GPS_Altitude_YANG':
+          rename: altitude # name to convert this variable to
+          unit_scale: 1 #Opt Scaling factor 
+          unit_scale_method: '*' #Opt Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+      'Tamb_1S': #'MSL_GPS_Altitude_YANG':
+          rename: temperature_obs # name to convert this variable to
+          unit_scale: 1 #Opt Scaling factor 
+          unit_scale_method: '*' #Opt Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+      'RHamb_1S': #'MSL_GPS_Altitude_YANG':
+          rename: RH_obs # name to convert this variable to
+          unit_scale: 1 #Opt Scaling factor 
+          unit_scale_method: '*' #Opt Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+    variable_summing:
+        'xylene_tot_obs':
+            vars: ['x107_0855255127_C8H11_','x121_1011734009_C9H13_']
+            ylabel_plot: 'Xylene'

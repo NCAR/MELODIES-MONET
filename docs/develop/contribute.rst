@@ -13,6 +13,5 @@ the contributions and support from you.
   to learn about current development plans.
 - Join an :ref:`Upcoming Workshop <getting_started/tutorials:Upcoming>`
   or check out :ref:`Past Workshops <getting_started/tutorials:Past>`.
-- See our developers guide, to learn 
-  :ref:`develop/developers_guide:How to incorporate updates to MELODIES MONET`.
+- See our :doc:`developers_guide` to learn how to contribute code.
 - Email melodies@ucar.edu with questions.

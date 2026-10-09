@@ -440,8 +440,15 @@ class analysis:
                 self.obs[o.label] = o
 
     def setup_obs_grid(self):
-        """
-        Setup a uniform observation grid.
+        """Create a uniform observation grid for accumulating swath data.
+
+        Reads ``obs_grid`` configuration (start_time, end_time, ntime, nlat, nlon)
+        from the control dictionary and initializes:
+
+        - :attr:`obs_grid` — grid center coordinates (longitude, latitude, time)
+        - :attr:`obs_edges` — grid cell edge arrays
+        - :attr:`obs_gridded_data` — zero arrays for data accumulation
+        - :attr:`obs_gridded_count` — zero arrays for count accumulation
         """
         from melodies_monet.util import grid_util
 
@@ -473,12 +480,14 @@ class analysis:
                 )
 
     def update_obs_gridded_data(self):
-        from melodies_monet.util import grid_util
+        """Accumulate swath observations onto the uniform grid.
 
+        For each observation dataset and time step, extracts lat/lon
+        coordinates and data values, bins observations into grid cells,
+        and accumulates sums and counts using Numba-accelerated
+        :func:`~melodies_monet.util.grid_util.update_data_grid`.
         """
-        Update observation grid cell values and counts,
-        for all observation datasets and parameters.
-        """
+        from melodies_monet.util import grid_util
         for obs in self.obs:
             for obs_time in self.obs[obs].obj:
                 print("updating obs time: ", obs, obs_time)
@@ -501,12 +510,13 @@ class analysis:
                     )
 
     def normalize_obs_gridded_data(self):
-        from melodies_monet.util import grid_util
+        """Normalize accumulated grid data by dividing sums by counts.
 
+        Creates :attr:`obs_gridded_dataset` containing data and count
+        arrays for each observation/variable combination. Grid cells
+        with zero observations are set to NaN.
         """
-        Normalize observation grid cell values where counts is not zero.
-        Create data arrays for the obs_gridded_dataset dictionary.
-        """
+        from melodies_monet.util import grid_util
         self.obs_gridded_dataset = xr.Dataset()
 
         for obs in self.obs:
@@ -863,7 +873,7 @@ class analysis:
                             print('Pairing is being done for model variable: '+keys[i_no2_varname[0]])
                         no2_varname = keys[i_no2_varname[0]]
 
-                        if m.mod_to_overpass:
+                        if mod.mod_to_overpass:
                             print("sampling model to 13:30 local overpass time")
                             overpass_datetime = pd.date_range(
                                 self.start_time.replace(hour=13, minute=30),
@@ -1032,7 +1042,7 @@ class analysis:
                             model_obj = mod.obj[keys + ["pres_pa_mid"]]
 
                             # Sample model to observation overpass time
-                            if m.mod_to_overpass:
+                            if mod.mod_to_overpass:
                                 print("sampling model to 10:30 local overpass time")
                                 overpass_datetime = pd.date_range(
                                     self.start_time.replace(hour=10, minute=30),

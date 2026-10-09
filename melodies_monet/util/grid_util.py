@@ -164,6 +164,30 @@ def normalize_data_grid(count_grid, data_grid):
 
 
 def generate_uniform_grid(start, end, ntime, nlat, nlon):
+    """Generate a uniform latitude-longitude-time grid.
+
+    Parameters
+    ----------
+    start : str or datetime
+        Start time (ISO format string or datetime).
+    end : str or datetime
+        End time (ISO format string or datetime).
+    ntime : int
+        Number of time bins.
+    nlat : int
+        Number of latitude bins (range: -90 to 90).
+    nlon : int
+        Number of longitude bins (range: -180 to 180).
+
+    Returns
+    -------
+    grid : dict
+        Grid center coordinates with keys ``'longitude'``, ``'latitude'``,
+        and ``'time'`` (Unix timestamps).
+    edges : dict
+        Grid cell boundaries with keys ``'lon_edges'``, ``'lat_edges'``,
+        and ``'time_edges'``.
+    """
     import pandas as pd
     start_timestamp = pd.to_datetime(start).timestamp()
     end_timestamp = pd.to_datetime(end).timestamp()

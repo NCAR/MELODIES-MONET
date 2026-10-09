@@ -45,7 +45,7 @@ UFS-AQM model data.
        | and Richard Kolyer)
      - | MMS - Meteorological
        | Measurement System
-     - | `MMS Description <https://earthscience.arc.nasa.gov/mms>`_
+     - | `MMS Description <https://airbornescience.nasa.gov/mms>`_
    * - | NO, NO\ :sub:`2`\  
        | (Nitrogen oxides)
      - | Andrew Rollins (NOAA CSL),

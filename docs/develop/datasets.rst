@@ -82,19 +82,17 @@ Satellite
 Examples for reading satellite datasets can be
 found in the ``monetio/sat`` folder in the MONETIO repository
 `on GitHub <https://github.com/noaa-oar-arl/monetio>`__.
-While a part of the MONETIO repository,
-the private MELODIES MONET readers are designated with prefix ``_`` 
-and suffix ``_mm``.
+Not all MONETIO satellite readers have been incorporated into MELODIES MONET. Please see
+:doc:`../users_guide/supported_datasets` to learn
+which satellites have been incorporated and are available for each model.
 
 Models
 ------
 Examples for reading model datasets can be
 found in the ``monetio/models`` folder in the MONETIO repository
 `on GitHub <https://github.com/noaa-oar-arl/monetio>`__.
-These include e.g., _cesm_fv_mm.py, _cmaq_mm.py, and _wrfchem_mm.py.
-While a part of the MONETIO repository,
-the private MELODIES MONET readers are designated with prefix ``_`` 
-and suffix ``_mm``.
+Not all MONETIO model readers have been incorporated into MELODIES MONET. Please see
+:doc:`../users_guide/supported_datasets` to learn which models have been incorporated.
 
 Support for additional models is also under developed.
 

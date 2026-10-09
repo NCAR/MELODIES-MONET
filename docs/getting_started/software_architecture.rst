@@ -23,8 +23,8 @@ variety of observational datasets all within a common framework.
 How MELODIES MONET works
 ------------------------
 
-A single `driver file <https://github.com/NCAR/MELODIES-MONET/blob/main/melodies_monet/driver.py>`__. 
-includes the core code that "drives" MELODIES MONET. The driver file 
+`Driver files <https://github.com/NCAR/MELODIES-MONET/blob/develop/melodies_monet/driver/>`__ 
+includes the core code that "drives" MELODIES MONET. The driver files 
 initializes several classes as shown in the schematic below. 
 
 * **Analysis class** -- This class holds all information needed for the 
@@ -57,7 +57,7 @@ generalizable and easy to adjust figure, text, and mapping properties, so that
 **users can both produce hundreds of plots for quick diagnostic assessments and
 have the flexibility to create publication quality plots**. 
 
-The driver, input YAML file, and example run scripts (jupyter notebook 
+The driver files, input YAML file, and example run scripts (jupyter notebook 
 and bash) are configured in the same way to first define the analysis, model, 
 observation, and pairing classes and second to create the plots and calculate 
 the statistics. By maintaining a consistent structure for all of these files, 
