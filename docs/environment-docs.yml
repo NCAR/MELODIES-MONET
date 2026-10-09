@@ -16,6 +16,7 @@ dependencies:
   - pillow
   #
   # Extras
+  - dask>=2024.4.1
   - numba
   - pooch
   - timezonefinder
