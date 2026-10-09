@@ -12,6 +12,10 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import xarray as xr
+try:
+    import uxarray as ux
+except ImportError:  # optional dep
+    ux = None
 from monet.plots.taylordiagram import TaylorDiagram as td
 from monet.util.tools import get_epa_region_bounds as get_epa_bounds
 from monet.util.tools import get_giorgi_region_bounds as get_giorgi_bounds
@@ -136,7 +140,13 @@ def make_timeseries(
         plot_dict["label"] = varname
     # scale the fontsize for the x and y labels by the text_kwargs
     plot_dict["fontsize"] = text_kwargs["fontsize"] * 0.8
-
+    
+    # Spatial dims to reduce over per timestep. Hardcoding ("y", "x") only
+    # works for structured swath output; unstructured paired data (CESM-SE
+    # back_to_modgrid) returns an "n_face" or "ncol" spatial dim 
+    # Average over whatever non-time dims are present.
+    spatial_dims = [d for d in dset[varname].dims if d != "time"]
+    
     # Then, if no plot has been created yet, create a plot and plot the obs.
     if ax is None:
         # First define the colors for the observations.
@@ -155,7 +165,8 @@ def make_timeseries(
         print(plot_kwargs)
 
         if avg_window is None:
-            dset[varname].mean(dim=("y", "x"), skipna=True).plot.line(
+            #dset[varname].mean(dim=("y", "x"), skipna=True).plot.line
+            dset[varname].mean(dim=spatial_dims, skipna=True).plot.line(
                 x="time",
                 ax=ax,
                 color=plot_kwargs["color"],
@@ -166,7 +177,8 @@ def make_timeseries(
                 label=plot_kwargs["label"],
             )
         else:
-            dset[varname].resample(time=avg_window).mean().mean(dim=("y", "x")).plot.line(
+            #dset[varname].resample(time=avg_window).mean().mean(dim=("y", "x")).plot.line
+             dset[varname].resample(time=avg_window).mean().mean(dim=spatial_dims).plot.line(
                 x="time",
                 ax=ax,
                 color=plot_kwargs["color"],
@@ -187,7 +199,8 @@ def make_timeseries(
         else:
             plot_kwargs = obs_dict
         if avg_window is None:
-            dset[varname].mean(dim=("y", "x")).plot.line(
+            dset[varname].mean(dim=spatial_dims).plot.line(
+            #dset[varname].mean(dim=("y", "x")).plot.line(
                 x="time",
                 ax=ax,
                 color=plot_kwargs["color"],
@@ -198,7 +211,8 @@ def make_timeseries(
                 label=plot_kwargs["label"],
             )
         else:
-            dset[varname].resample(time=avg_window).mean().mean(dim=("y", "x")).plot.line(
+            #dset[varname].resample(time=avg_window).mean().mean(dim=("y", "x")).plot.line(
+            dset[varname].resample(time=avg_window).mean().mean(dim=spatial_dims).plot.line(
                 x="time",
                 ax=ax,
                 color=plot_kwargs["color"],
@@ -606,6 +620,8 @@ def make_boxplot(
         bbox_inches="tight",
         dpi=200,
     )
+    if debug is False:
+        plt.close(plt.gcf())
 
 
 def make_spatial_dist(
@@ -622,6 +638,7 @@ def make_spatial_dist(
     domain_name=None,
     fig_dict=None,
     text_dict=None,
+    uxgrid = None,
     debug=False,
 ):
     """Creates a plot for satellite or model data.
@@ -632,6 +649,22 @@ def make_spatial_dist(
         Dataset containing the paired data
 
     """
+
+    # detect unstructured input from cesm-se. 
+    is_unstructured = uxgrid is not None or any(
+        d in dset[varname].dims for d in ("n_face", "ncol")
+    )
+
+    if is_unstructured and uxgrid is None:
+        grid_file = dset.attrs.get("mio_scrip_file") or dset.attrs.get("mio_mesh_file")
+        if not grid_file:
+            raise ValueError(
+                "make_spatial_dist: unstructured input but no uxgrid passed "
+                "and no mio_scrip_file/mio_mesh_file attr on dset."
+            )
+
+        uxgrid = ux.open_grid(grid_file)
+    
     if not debug:
         plt.ioff()
 
@@ -656,11 +689,26 @@ def make_spatial_dist(
 
     # Take the difference for the model output - the sat output
 
-    var2plot = dset[varname]  # Take mean over time,
-
-    if len(var2plot.dims) == 3:
+    #  hand the renderer a single 2-D map
+    # (pcolormesh) or 1-D column field (uxarray polygons). h
+    # structured (time, lat, lon) and unstructured (time, n_face) shapes
+    
+    var2plot = dset[varname]
+    if "time" in var2plot.dims:
         var2plot = var2plot.mean("time")
+    var2plot = var2plot.squeeze()
+    
+    # if len(var2plot.dims) == 3:
+    #     var2plot = var2plot.mean("time")
 
+    #  hand the renderer a single 2-D map
+    # (pcolormesh) or 1-D column field (uxarray polygons). Works for both
+    # structured (time, lat, lon) and unstructured (time, n_face)
+    var2plot = dset[varname]
+    if "time" in var2plot.dims:
+        var2plot = var2plot.mean("time")
+    var2plot = var2plot.squeeze()
+    
     # Determine the domain
     if domain_type == "all" and domain_name == "CONUS":
         latmin = 25.0
@@ -678,6 +726,16 @@ def make_spatial_dist(
         latmin, latmax = dset["latitude"].min(), dset["latitude"].max()
         lonmin, lonmax = dset["longitude"].min(), dset["longitude"].max()
         title_add = ""
+    elif domain_type and (str(domain_type).startswith("auto-region:")
+                      or str(domain_type).startswith("custom:")):
+        # zoom to where the field has data (the region the driver subset to),
+        # so a global/CONUS grid doesn't render worldwide.
+        _finite = var2plot.notnull()
+        _lat = dset["latitude"].where(_finite)
+        _lon = dset["longitude"].where(_finite)
+        latmin, latmax = float(_lat.min()), float(_lat.max())
+        lonmin, lonmax = float(_lon.min()), float(_lon.max())
+        title_add = domain_name + ": "
     else:
         latmin = -90
         lonmin = -180
@@ -715,7 +773,22 @@ def make_spatial_dist(
     )
     # draw scatter plot of model and satellite differences
     # c = ax.axes.scatter(dset.longitude, dset.latitude, c=var2plot, cmap=cmap, s=2, norm=norm)
-    c = ax.axes.pcolormesh(dset.longitude, dset.latitude, var2plot, cmap=cmap, norm=norm)
+    #c = ax.axes.pcolormesh(dset.longitude, dset.latitude, var2plot, cmap=cmap, norm=norm)
+
+    # structured grids can use pccolormesh. unstructured use uxarray polygons
+    if is_unstructured:
+        from melodies_monet.plots.uxarray_render import render_unstructured_field
+
+        c = render_unstructured_field(
+            ax.axes, var2plot, uxgrid,
+            cmap=cmap, norm=norm,
+            extent=map_kwargs["extent"],
+            coast=False, borders=False, states=False, gridlines=False,
+            colorbar=False,)
+    else:
+        c = ax.axes.pcolormesh(
+            dset.longitude, dset.latitude, var2plot, cmap=cmap, norm=norm,)
+    
     plt.gcf().canvas.draw()
     plt.tight_layout(pad=0)
     timestamps = (
@@ -764,6 +837,8 @@ def make_spatial_dist(
         bbox_inches="tight",
         dpi=150,
     )
+    if debug is False:
+        plt.close(plt.gcf())
     return ax
 
 
@@ -783,6 +858,7 @@ def make_spatial_bias_gridded(
     fig_dict=None,
     text_dict=None,
     debug=False,
+    uxgrid=None,
     **kwargs
 ):
     """Creates difference plot for satellite and model data.
@@ -816,6 +892,20 @@ def make_spatial_bias_gridded(
         satellite spatial bias plot
 
     """
+
+    # Detect unstructured input (CESM-SE et al). only the
+    # actual data->geometry step differs (PolyCollection vs pcolormesh).
+    is_unstructured = uxgrid is not None or any(
+        d in dset[varname_m].dims for d in ("n_face", "ncol"))
+    
+    if is_unstructured and uxgrid is None:
+        grid_file = dset.attrs.get("mio_scrip_file") or dset.attrs.get("mio_mesh_file")
+        if not grid_file:
+            raise ValueError(
+                "make_spatial_bias_gridded: unstructured input but no uxgrid "
+                "passed and no mio_scrip_file/mio_mesh_file attr on dset.")
+
+        uxgrid = ux.open_grid(grid_file)
     if not debug:
         plt.ioff()
 
@@ -841,9 +931,17 @@ def make_spatial_bias_gridded(
     # Take the difference for the model output - the sat output
 
     diff_mod_min_obs = (dset[varname_m] - dset[varname_o]).squeeze()
-    # Take mean over time,
-    if len(diff_mod_min_obs.dims) == 3:
+    # # Take mean over time,
+    # if len(diff_mod_min_obs.dims) == 3:
+    #     diff_mod_min_obs = diff_mod_min_obs.mean("time")
+
+    # Reduce away time so the renderer (uxarray polygons or pcolormesh)
+    # gets a single 1-D / 2-D map. 
+    
+    diff_mod_min_obs = dset[varname_m] - dset[varname_o]
+    if "time" in diff_mod_min_obs.dims:
         diff_mod_min_obs = diff_mod_min_obs.mean("time")
+    diff_mod_min_obs = diff_mod_min_obs.squeeze()
 
     # Determine the domain
     if domain_type == "all" and domain_name == "CONUS":
@@ -862,6 +960,16 @@ def make_spatial_bias_gridded(
         latmin, latmax = dset["latitude"].min(), dset["latitude"].max()
         lonmin, lonmax = dset["longitude"].min(), dset["longitude"].max()
         title_add = ""
+    elif domain_type and (str(domain_type).startswith("auto-region:")
+                          or str(domain_type).startswith("custom:")):
+        # zoom to where the difference has data (the region the driver subset
+        # to), so a global/CONUS grid doesn't render worldwide.
+        _finite = diff_mod_min_obs.notnull()
+        _lat = dset["latitude"].where(_finite)
+        _lon = dset["longitude"].where(_finite)
+        latmin, latmax = float(_lat.min()), float(_lat.max())
+        lonmin, lonmax = float(_lon.min()), float(_lon.max())
+        title_add = domain_name + ": "    
     else:
         latmin = -90
         lonmin = -180
@@ -888,7 +996,13 @@ def make_spatial_bias_gridded(
         )
 
     if nlevels is None:
-        nlevels = 21
+        clevel = np.linspace(-vdiff, vdiff, 256)          # dense, for cbar ticks
+        cmap = plt.get_cmap("RdBu_r")                     # continuous
+        norm = mpl.colors.Normalize(vmin=-vdiff, vmax=vdiff)
+    else:
+        clevel = np.linspace(-vdiff, vdiff, nlevels)
+        cmap = mpl.cm.get_cmap("RdBu_r", nlevels - 1)
+        norm = mpl.colors.BoundaryNorm(clevel, ncolors=cmap.N, clip=False)
 
     clevel = np.linspace(-vdiff, vdiff, nlevels)
     cmap = mpl.cm.get_cmap("RdBu_r", nlevels - 1)
@@ -900,11 +1014,29 @@ def make_spatial_bias_gridded(
     ax = monet.plots.mapgen.draw_map(
         crs=map_kwargs["crs"], extent=map_kwargs["extent"], states=states, counties=counties
     )
+
+    # Draw the diff field. Structured -> pcolormesh; unstructured -> uxarray
+    if is_unstructured:
+        from melodies_monet.plots.uxarray_render import render_unstructured_field
+
+        c = render_unstructured_field(
+            ax.axes, diff_mod_min_obs, uxgrid,
+            cmap=cmap, norm=norm,
+            extent=map_kwargs["extent"],
+            coast=False, borders=False, states=False, gridlines=False,
+            colorbar=False,
+        )
+    else:
+        c = ax.axes.pcolormesh(
+            dset.longitude, dset.latitude, diff_mod_min_obs, cmap=cmap, norm=norm,
+        )
+        
     # draw scatter plot of model and satellite differences
     # c = ax.axes.scatter(
     #     dset.longitude, dset.latitude, c=diff_mod_min_obs, cmap=cmap, s=2, norm=norm
     # )
-    c = ax.axes.pcolormesh(dset.longitude, dset.latitude, diff_mod_min_obs, cmap=cmap, norm=norm)
+    #c = ax.axes.pcolormesh(dset.longitude, dset.latitude, diff_mod_min_obs, cmap=cmap, norm=norm)
+    
     plt.gcf().canvas.draw()
     plt.tight_layout(pad=0)
     timestamps = (
@@ -953,6 +1085,8 @@ def make_spatial_bias_gridded(
         bbox_inches="tight",
         dpi=150,
     )
+    if debug is False:
+        plt.close(plt.gcf())
     return ax
 
 
@@ -1085,6 +1219,8 @@ def make_multi_boxplot(
 
     plt.tight_layout()
     savefig(outname + ".png", loc=4, logo_height=100)
+    if debug is False:
+        plt.close(plt.gcf())
 
 
 def make_diurnal_cycle(dset, varname, ax=None, **kwargs):
@@ -1146,11 +1282,26 @@ def make_diurnal_cycle(dset, varname, ax=None, **kwargs):
     """
     dset_copy = dset.copy()
     time_offset = kwargs.get("time_offset", 0)
-    dset_copy["time"] = dset_copy["time"] + np.timedelta64(time_offset, "h")
+    # dset_copy["time"] = dset_copy["time"] + np.timedelta64(time_offset, "h")
+    # pd.to_timedelt so fractional hour offsets work 
+    dset_copy["time"] = dset_copy["time"] + pd.to_timedelta(time_offset, unit="h")
 
-    dset_copy = dset_copy.mean(dim=["x", "y"])
+    # Collapse all spatial dims (x/y swath, n_face/ncol unstructured, ...)
+    # so only time remains for the diurnal grouping.
+    spatial_dims = [d for d in dset_copy[varname].dims if d != "time"]
+    if spatial_dims:
+        dset_copy = dset_copy.mean(dim=spatial_dims)
     dset_diurnal_group = dset_copy[[varname]].groupby("time.hour")
     dset_diurnal = dset_diurnal_group.median()
+
+    n_hours = dset_diurnal.sizes.get("hour", 0)
+    if n_hours <= 3:
+        warnings.warn(
+            f"Diurnal cycle for '{varname}' only has data in {n_hours} distinct "
+            "hour(s) of the day. Your observation type may not have diurnal "
+            "resolution (e.g., a polar-orbiting satellite like TROPOMI samples "
+            "each location ~once per day)."
+        )
 
     # Set some defaults
     text_kwargs = {"fontsize": 14}
@@ -1174,7 +1325,7 @@ def make_diurnal_cycle(dset, varname, ax=None, **kwargs):
         dset_diurnal["hour"],
         dset_diurnal[varname],
         label=label,
-        **{**style_dict, **kwargs["plot_dict"]},
+        **{**style_dict, **(kwargs.get("plot_dict") or {})},
     )
     ax.set_xlabel(kwargs.get("xlabel", "hour"), **text_kwargs)
     ax.set_ylabel(ylabel, **text_kwargs)
@@ -1213,7 +1364,9 @@ def make_diurnal_cycle(dset, varname, ax=None, **kwargs):
     vmax = float(vmax) if vmax is not None else None
     vmin = float(vmin) if vmin is not None else None
     ax.set_ylim(top=vmax, bottom=vmin)
-    ax.set_title(f"{kwargs.get('domain_name', None)}", fontsize=text_kwargs["fontsize"])
+
+    if kwargs.get("domain_name"):
+        ax.set_title(f"{kwargs['domain_name']}", fontsize=text_kwargs["fontsize"])
     return ax
 
 
