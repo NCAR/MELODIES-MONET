@@ -20,6 +20,16 @@ Surface Evaluation
    observation (y-axis) versus time (x-axis) over the analysis window with
    options to specify the domain, time (local or UTC), and averaging window.
 
+.. figure:: /_static/figures/diurnal_ufschem_airnow_example.png
+   :scale: 25 %
+   :alt: Diurnal cycle of surface ozone (UFS-Chem v. AirNow)
+
+   **Diurnal plot** - Plot comparing average daily cycle of one or more model
+   results with an observation. X-axis shows the hour of the day (0--24) in local 
+   time or UTC. The y-axis is the variable value. Data from all days within the 
+   selected analysis window are grouped by hour and averaged, producing a single 
+   representative 24-hour cycle rather than a continuous chronological time series. 
+
 .. figure:: /_static/figures/plot_grp2.taylor.OZONE.2019-08-01_12.2019-08-11_12.all.CONUS.png
    :scale: 25 %
 
@@ -88,6 +98,8 @@ Surface Evaluation
    :scale: 20 %
 
    **Rose plot** - Wind rose if provide wind speed or polution rose if you provide another variable. In the wind rose plots, calm winds are plotted as an inner circle for wind direction and data is removed for pollution rose plots based on the threshold set in your yaml file.
+
+   **Diurnal plot** - Plot comparing one or more model results with one observation (y-axis) versus time (x-axis) from 0--24 over the analysis window with options to specify the domain, time (local or UTC), and averaging window.
 
 Please refer to the
 `MELODIES MONET project board <https://github.com/orgs/NCAR/projects/150/>`__ 

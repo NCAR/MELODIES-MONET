@@ -406,7 +406,8 @@ For each plotting group, update the label and include the following information.
 Note: the labels need to be unique, but otherwise are not used.
 
 **type:** The plot type. Options are: "timeseries", "taylor", "spatial_bias",
-"spatial_overlay", "spatial_bias_exceedance", "boxplot", "multi-boxplot","csi"
+"spatial_overlay", "spatial_bias_exceedance", "boxplot", "multi-boxplot","csi", "rose_plot",
+"diurnal_plot"
 Note: "spatial_bias_exceedance" plots only work when regulatory = True.
 
 **fig_kwargs:** This is optional to provide a dictionary with figure 
