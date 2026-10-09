@@ -1,0 +1,273 @@
+# General Description:  
+# Any key that is specific for a plot type will begin with ts for timeseries, ty for taylor
+# Opt: Specifying the variable or variable group is optional
+# For now all plots except time series average over the analysis window. 
+# Setting axis values - If set_axis = True in data_proc section of each plot_grp the yaxis for the plot will be set based on the values specified in the obs section for each variable. If set_axis is set to False, then defaults will be used. 'vmin_plot' and 'vmax_plot' are needed for 'timeseries', 'spatial_overlay', and 'boxplot'. 'vdiff_plot' is needed for 'spatial_bias' plots and'ty_scale' is needed for 'taylor' plots. 'nlevels' or the number of levels used in the contour plot can also optionally be provided for spatial_overlay plot. If set_axis = True and the proper limits are not provided in the obs section, a warning will print, and the plot will be created using the default limits.
+
+#-------------------------------------------------------------------
+# Universal comparison variables
+analysis:
+  start_time: '2024-01-01-00:00:00'          #UTC
+  end_time: '2024-01-02-23:59:00'          #UTC
+  output_dir: 
+    ./output/airnow_mpas
+  save:
+    paired:
+      method: 'netcdf'
+      prefix: '20240101'
+      data: all
+  read:
+    paired:
+      method: 'netcdf'
+      filenames: {airnow_cesm_se: ['airnow_mpas']}
+  download_maps: false #If off-line or on machine with download restrictions like hera set to False.
+  debug: True
+  
+  # add this as example to yaml 
+  montage:
+    plot_dir: ./output/airnow_mpas # where are the single images written too
+    outdir: ./output/airnow_mpas # where do you want the montages written too
+    group_by: type     # puts all outputted figs in montage
+    # options include: "all", "plotname", "type"
+    search: "*.png"
+    cols: 6
+    thumb_width: 420
+  
+#-------------------------------------------------------------------
+# Model definitions
+model:
+  mpas:
+    files: /glade/work/lcthompson/mm_tutorial_data/Sample_MPAS_ASIAAQ_airnow_2024-01-01.nc
+    
+    # mpas and cesm-se both go through the same unstructured reader!
+    mod_type: 'mpas'
+    
+    # for unstructured model grids, a grid file has to be provided! 
+    # good for the PR reviewer to possibly check that the mesh_file, scrip_file, and grid_file are all accepted to keep the unstructured
+    # reader as generic as possible
+    scrip_file: "/glade/work/wenfut/MPAS_tools/NCL_codes2/x20.835586.real.asiaaq.init_58L.nc"
+    
+    radius_of_influence: 27794 #meters
+    extra_calc: # Add more complex calculations and their associated variables here.
+
+    ####### Extra_calc naming example
+    # variable_calculating
+      # variable required for calculation: "variable name in model"
+      
+      windspeed:
+        u_comp: "U"
+        v_comp: "V"
+      winddir: 
+        u_comp: "U"
+        v_comp: "V"
+      wind_barb: 
+        u_comp: "U" 
+        v_comp: "V"
+      rose_plot:
+        model_wdir: "winddir"
+        model_wspd: "windspeed"
+        
+    mapping: #model species name : obs species name
+      airnow:
+        PM25: 'PM2.5'
+        O3: 'OZONE'
+        windspeed: 'WS'
+        winddir: 'WD'
+        
+    projection:
+    plot_kwargs: #Opt 
+      color: 'dodgerblue'
+      marker: '+'
+      linestyle: '-.'
+
+#-------------------------------------------------------------------
+# Observation definitions
+obs:
+  airnow: # obs label
+    use_airnow: true
+    filename: '/glade/u/home/lcthompson/mm/MELODIES-MONET/docs/examples/ungridded_support/unstructured_grid_read_uxarray/readthedocs/output/airnow_mpas/AirNow_20240101_20240103.nc'
+
+
+    obs_type: pt_sfc
+    variables: #Opt
+      PM2.5:
+        unit_scale: 1
+        unit_scale_method: '*' # Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+        obs_min: 0 # set all values less than this value to NaN
+        obs_max: 100 # set all values greater than this value to NaN
+        nan_value: -1.0 # Set this value to NaN
+        #The obs_min, obs_max, and nan_values are set to NaN first and then the unit conversion is applied.
+        ylabel_plot: 'PM2.5 (ug/m3)' #Optional to set ylabel so can include units and/or instr etc.
+        ty_scale: 2.0 #Opt
+        vmin_plot: 0.0 #Opt Min for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+        vmax_plot: 22.0 #Opt Max for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+        vdiff_plot: 15.0 #Opt +/- range to use in bias plots. To apply to a plot, change restrict_yaxis = True.
+        nlevels_plot: 23 #Opt number of levels used in colorbar for contourf plot.
+      OZONE:
+        unit_scale: 1 #Opt Scaling factor 
+        unit_scale_method: '*' #Opt Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+        nan_value: -1.0 # Opt Set this value to NaN
+        ylabel_plot: 'Ozone (ppbv)'
+        vmin_plot: 0 #Opt Min for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+        vmax_plot: 40 #Opt Max for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+        vdiff_plot: 5 #Opt +/- range to use in bias plots. To apply to a plot, change restrict_yaxis = True.
+        nlevels_plot: 21 #Opt number of levels used in colorbar for contourf plot.
+      WS:
+        unit_scale: 1
+        unit_scale_method: "*"
+        nan_value: -1.0
+        ylabel_plot: "Windspeed 10m (m/s)"
+        xlabel_plot: "Windspeed 10m (m/s)"
+        vmin_plot: 0
+        vmax_plot: 12
+        vdiff_plot: 4
+        nlevels_plot: 18
+      WD: 
+        unit_scale: 1
+        unit_scale_method: "*"
+        nan_value: -1.0
+        ylabel_plot: "Wind Direction 10m (deg)"
+        xlabel_plot: "Wind Direction 10m (deg)"
+        vmin_plot: 0
+        vmax_plot: 370
+        vdiff_plot: 4
+        nlevels_plot: 18
+
+
+#-------------------------------------------------------------------
+# Define which comparisons/plots to complete:
+# Any key that is specific for a plot type will begin with ts for timeseries, ty for taylor
+# Opt: Specifying the variable or variable group is optional
+# For now all plots except time series average over the analysis window. 
+# Setting axis values - If set_axis = True in data_proc section of each plot_grp the yaxis for the plot will be set based on the values specified in the obs section for each variable. If set_axis is set to False, then defaults will be used. 'vmin_plot' and 'vmax_plot' are needed for 'timeseries', 'spatial_overlay', and 'boxplot'. 'vdiff_plot' is needed for 'spatial_bias' plots and'ty_scale' is needed for 'taylor' plots. 'nlevels' or the number of levels used in the contour plot can also optionally be provided for spatial_overlay plot. If set_axis = True and the proper limits are not provided in the obs section, a warning will print, and the plot will be created using the default limits.
+
+plots:
+  plot_grp1:
+    type: 'multi_boxplot'
+    fig_kwargs: {figsize: [10, 6]}
+    text_kwargs: {fontsize: 16}
+    domain_type: ['all'] #List of domain types: 'all' or any domain in obs file. (e.g., airnow: epa_region etc.) 
+    domain_name: ['CONUS'] #List of domain names. If domain_type = all domain_name is used in plot title.
+    data: ['airnow_mpas']
+    interval_var: time
+    interval_list: [5, 11, 16, 20]
+    interval_labels: [morning, midday, evening]
+    xlabel: 'Time'
+    data_proc: {rem_obs_nan: True, set_axis: False}
+
+  plot_grp2:
+    type: 'multi_boxplot'
+    fig_kwargs: {figsize: [10, 6]}
+    text_kwargs: {fontsize: 16}
+    domain_type: ['all'] #List of domain types: 'all' or any domain in obs file. (e.g., airnow: epa_region etc.) 
+    domain_name: ['CONUS'] #List of domain names. If domain_type = all domain_name is used in plot title.
+    data: ['airnow_mpas']
+    interval_var: NO2                # TEMPO HCHO obs column
+    interval_list: [0, 15, 30, 45, 60]
+    interval_labels: [clean, moderate, elevated, hotspot]
+    xlabel: 'Observed NO2 regime'
+    data_proc: {rem_obs_nan: True, set_axis: False}
+
+  plot_grp3:
+    type: 'multi_boxplot'
+    fig_kwargs: {figsize: [8, 6]}
+    text_kwargs: {fontsize: 16}
+    domain_type: ['all'] #List of domain types: 'all' or any domain in obs file. (e.g., airnow: epa_region etc.) 
+    domain_name: ['CONUS'] #List of domain names. If domain_type = all domain_name is used in plot title.
+    data: ['airnow_mpas']
+    interval_var: dayofweek 
+    interval_list: [0, 5, 7]
+    interval_labels: [weekday, weekend]
+    xlabel: 'Day type'
+    data_proc: {rem_obs_nan: True, set_axis: False}
+
+  plot_grp4:
+    type: 'multi_boxplot'
+    fig_kwargs: {figsize: [10, 6]}
+    text_kwargs: {fontsize: 16}
+    domain_type: ['all'] #List of domain types: 'all' or any domain in obs file. (e.g., airnow: epa_region etc.) 
+    domain_name: ['CONUS'] #List of domain names. If domain_type = all domain_name is used in plot title.
+    data: ["airnow_mpas"]
+    interval_var: dayofweek
+    interval_list: [0, 1, 2, 3, 4, 5, 6, 7]        # Mon=0..Sun=6 ; one bin per day
+    interval_labels: [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
+    xlabel: 'Day of week'
+    data_proc: {rem_obs_nan: True, set_axis: False}
+    
+  plot_grp5:
+    type: "timeseries" # plot type
+    fig_kwargs: # optional; to define figure options
+      figsize: [12, 6] # figure size (width, height) in inches
+    default_plot_kwargs:
+      # ^ optional; Define defaults for all plots.
+      #   Important: Model kwargs overwrite these.
+      linewidth: 2.0
+      markersize: 10.
+    text_kwargs: # optional
+      fontsize: 24.
+    domain_type: ['all','epa_region'] #List of domain types: 'all' or any domain in obs file. (e.g., airnow: epa_region, state_name, siteid, etc.) 
+    domain_name: ['CONUS','R1'] #List of domain names. If domain_type = all domain_name is used in plot title.
+    # ^ List of domain names. If domain_type = all,
+    #   the domain name is used in the plot title.
+
+      #   #### View unique state and country values 
+  #   # an.paired['ish_ufschem_v1']
+  #   # df = an.paired['ish_ufschem_v1'].obj.to_dataframe()
+  #   # df.columns
+  #   # df["country"].unique()
+  #   # df["state"].unique()
+    data: ['airnow_mpas']
+    data_proc:
+      rem_obs_nan: True
+      # ^ True: Remove all points where model or obs variable is NaN.
+      #   False: Remove only points where model variable is NaN.
+      ts_select_time: "time_local"  # `ts_` indicates this is time series plot-specific
+      # ^ Time used for avg and plotting
+      #   Options: 'time' for UTC or 'time_local'
+      ts_avg_window: "h"
+      # ^ Options: None for no averaging, pandas resample rule (e.g., 'h', 'D')
+      set_axis: False
+  
+  plot_grp6:
+    type: 'taylor' # plot type
+    fig_kwargs: #Opt to define figure options
+      figsize: [8,8] # figure size if multiple plots
+    default_plot_kwargs: # Opt to define defaults for all plots. Model kwargs overwrite these.
+      linewidth: 2.0
+      markersize: 10.
+    text_kwargs: #Opt
+      fontsize: 16.
+    domain_type: ['all','epa_region'] #List of domain types: 'all' or any domain in obs file. (e.g., airnow: epa_region, state_name, siteid, etc.) 
+    domain_name: ['CONUS','R1'] #List of domain names. If domain_type = all domain_name is used in plot title.
+    data: ['airnow_mpas'] # make this a list of pairs in obs_model where the obs is the obs label and model is the model_label
+    data_proc:
+      rem_obs_nan: True # True: Remove all points where model or obs variable is NaN. False: Remove only points where model variable is NaN.
+      set_axis: False #If select True, add ty_scale for each variable in obs.
+  
+  plot_grp7:
+    type: 'spatial_bias' # plot type
+    fig_kwargs: #For all spatial plots, specify map_kwargs here too.
+      states: True
+      figsize: [10, 5] # figure size 
+    text_kwargs: #Opt
+      fontsize: 16.
+    domain_type: ['all','epa_region'] #List of domain types: 'all' or any domain in obs file. (e.g., airnow: epa_region, state_name, siteid, etc.) 
+    domain_name: ['CONUS','R1'] #List of domain names. If domain_type = all domain_name is used in plot title.
+    data: ['airnow_mpas'] # make this a list of pairs in obs_model where the obs is the obs label and model is the model_label
+    data_proc:
+      rem_obs_nan: True # True: Remove all points where model or obs variable is NaN. False: Remove only points where model variable is NaN.
+      set_axis: False #If select True, add vdiff_plot for each variable in obs.
+        
+# #-----------------------------------------------------------------------------
+stats:
+  #Stats require positive numbers, so if you want to calculate temperature use Kelvin!
+  #Wind direction has special calculations for AirNow if obs name is 'WD'
+  stat_list: ['MB', 'ME', 'RMSE', 'NMB', 'NME', 'R2'] #List stat to calculate below. Dictionary of definitions included in plots/proc_stats.py
+  #Full calc list ['STDO', 'STDP', 'MNB', 'MNE', 'MdnNB', 'MdnNE', 'NMdnGE','NO','NOP','NP','MO','MP', 'MdnO', 'MdnP', 'RM', 'RMdn', 'MB', 'MdnB', 'NMB', 'NMdnB', 'FB', 'ME', 'MdnE', 'NME', 'NMdnE', 'FE', 'MNPB', 'MdnNPB', 'MNPE', 'MdnNPE', 'NMPB', 'NMdnPB', 'NMPE', 'NMdnPE', 'R2', 'RMSE', 'd1', 'E1', 'IOA', 'AC', 'HSS', 'ETS'] 
+  output_table: true #Always outputs a .txt file. Optional to also output as a table.
+  domain_type: ['all'] #List of domain types: 'all' or any domain in obs file. (e.g., airnow: epa_region, state_name, siteid, etc.) 
+  domain_name: ['CONUS'] #List of domain names. If domain_type = all domain_name is used in plot title.
+  data: ['airnow_mpas'] # make this a list of pairs in obs_model where the obs is the obs label and model is the model_label
+
+
+

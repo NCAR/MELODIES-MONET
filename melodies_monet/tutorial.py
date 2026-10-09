@@ -46,7 +46,11 @@ _examples = {
         "2017-07": (
             "example_observation_data/surface/AirNow_20170701_20170703.nc",
             "sha256:b924c66424b7f0f663eca946273fe8b6ce43953f5e97fd00564e0720f9b074fe",
-        )
+        ),
+        "2024-01": (
+            "example_observation_data/surface/AirNow_20240101_20240103.nc",
+            "sha256:5f3598ca29a5a2731b0ed679b063afce238eac5bdd35d157cde859b8881a9b60",
+        ),
     },
     "camchem": {
         "fv": (
@@ -60,6 +64,18 @@ _examples = {
         "se_scrip": (
             "example_model_data/musica_example/ne0CONUS_ne30x8_np4_SCRIP.nc",
             "sha256:890e1e98f52a5687c57cb15e52f481aa17c6b9eea2bf8e860cae2301697cc027",
+        ),
+        "se_conus_ish_2024-01": (
+            "example_model_data/musica_example/Sample_CESM-SE_CONUS_ish_2024-01-01_03.nc",
+            "sha256:0bb0aba6e88eb09257c7e13cf99c2a2fe598593f65fafb9a0708cb60f3b91521",
+        ),
+        "se_track_asiaaq_2024-02": (
+            "example_model_data/musica_example/Sample_CESM-SE_track_asiaaq_dc8_2024-02-13.nc",
+            "sha256:f2af8fbf8deb54c209df68c1be61563a39bee5121519f3bde3e58f504330b4b0",
+        ),
+        "se_gems01_scrip": (
+            "example_model_data/musica_example/GEMS01_ne30x8_np4_SCRIP.nc",
+            "sha256:cef0d72462936ee330961bec24a7b74425d560ff1b50155bbf8e4af55a6fc01c",
         ),
     },
     "ufsaqm": {
@@ -145,6 +161,10 @@ _examples = {
             "example_observation_data/surface/ISH_20170701_20170703.nc",
             "sha256:beb7d5965728f07959ede6406b670b0b87fb15b99c27dfa561f105d48f81dd65",
         ),
+        "2024-01": (
+            "example_observation_data/surface/ISH_20240101_20240102.nc",
+            "sha256:b3d3fb2cf1953d9f85339076aa2591c06bbec07e4fe2083f39c665c92cd12888",
+        ),
     },
     "ish-lite": {
         "2017-07" : (
@@ -156,6 +176,22 @@ _examples = {
         "2023-08-01" : (
             "example_observation_data/profile/met_sonde_2023080112-72632.csv",
             "sha256:c5715bb7935c9a3f0a8e8c6ecd40bc8e0098e26f8a3eafbf5fba4fa02cab7424",
+        ),
+    },
+    "mpas": {
+        "asiaaq_2024-01": (
+            "example_model_data/mpas_example/Sample_MPAS_ASIAAQ_airnow_2024-01-01.nc",
+            "sha256:934a72ed9d14a78895eff498a95a8bd127cac31c4c75f96bf1f774979e6c41b6",
+        ),
+        "asiaaq_init": (
+            "example_model_data/mpas_example/x20.835586.real.asiaaq.init_58L.nc",
+            "sha256:4153d0382f195d11b965d60377025142ff09433c6671cbf29273f132c0f61531",
+        ),
+    },
+    "asiaaq-dc8": {
+        "paired_2024-02-13": (
+            "example_paired_data/asiaaq_example/0213_jz_asiaaq_dc8_cam-chem-se-era5.nc4",
+            "sha256:7d694b413b253bc24c1737f94e7e643d24546ce1f197d1cfd8f304270380c84d",
         ),
     },
 }

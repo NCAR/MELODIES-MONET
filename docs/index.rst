@@ -118,6 +118,9 @@ Table of Contents
    examples/UWyoming_UFS-CHEM_Pairing
    examples/UWyoming_UFS-CHEM_pairing_loop_read
    examples/ufs-aqm-gml-ozonesonde
+   examples/cesm-se_ish_20240101
+   examples/airnow_mpas
+   examples/1x_track_cesm_se
    examples/idealized
 
 .. toctree::

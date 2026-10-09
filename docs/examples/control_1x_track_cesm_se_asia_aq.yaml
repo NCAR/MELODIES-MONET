@@ -1,0 +1,225 @@
+
+# General Description:
+# - Any key that is specific for a plot type will begin with `ts` for timeseries, `ty` for taylor.
+# - Some keys/groups are optional.
+# - For now, all plots except time series average over the analysis window.
+# - Setting axis values
+#   - If set_axis = True in data_proc section of each plot_grp,
+#     the yaxis for the plot will be set based on the values
+#     specified in the obs section for each variable.
+#   - If set_axis is set to False, then defaults will be used.
+#   - 'vmin_plot' and 'vmax_plot' are needed for
+#     'timeseries', 'spatial_overlay', and 'boxplot'.
+#   - 'vdiff_plot' is needed for 'spatial_bias' plots
+#   - 'ty_scale' is needed for 'taylor' plots.
+#   - 'nlevels' or the number of levels used in the contour plot can also optionally be provided for spatial_overlay plot.
+#   - If set_axis = True and the proper limits are not provided in the obs section,
+#     a warning will print, and the plot will be created using the default limits.
+
+#-------------------------------------------------------------------
+# Universal comparison variables
+analysis:
+  start_time: '2024-02-13'                 
+  end_time: '2024-02-14 23:59:00'  
+
+  output_dir:
+    ./output/1x_asia_aq_cesmse
+  output_dir_save:
+    ./output/1x_asia_aq_cesmse
+  output_dir_read:
+    ./output/1x_asia_aq_cesmse
+    
+  save:
+    paired:
+      method: 'netcdf'
+      prefix: '0213_jz_asiaaq'
+      data: all
+
+  # plot
+  read:
+    paired:
+      method: 'netcdf'
+      filenames:        
+        dc8_cam-chem-se-era5:   ["/glade/work/lcthompson/jun_zhang_cs_06122026/output_021324/0213_jz_asiaaq_dc8_cam-chem-se-era5.nc4"]
+        
+  download_maps: false
+  debug: True
+
+#-------------------------------------------------------------------
+# Model definitions
+model:
+  cam-chem-se-era5:
+    files:
+      - /glade/work/lcthompson/mm_tutorial_data/Sample_CESM-SE_track_asiaaq_dc8_2024-02-13.nc
+      
+    mod_type: 'cesm_se'
+    
+    # tell melodies monet you have a track only model output
+    is_track: True
+
+    # for unstructured model output, you must provide a scrip / mesh file. Otherwise, you will need to regrid your model into a MM fixed lat / lon 
+    # format prior to use 
+    scrip_file: "/glade/work/emmons/VRM_Files/ne0np4.GEMS01.ne30x8/grids/GEMS01_ne30x8_np4_SCRIP.nc"
+    radius_of_influence: 100000
+
+    # _model_ species name to _obs_ species name
+    mapping:
+      dc8:
+        O3: 'O3'
+        NO2: 'NO2'
+        T: 'temperature'
+
+    projection: ~ 
+    plot_kwargs: #Opt 
+      color: 'dodgerblue'
+      marker: '+'
+      linestyle: '-.'
+
+#-------------------------------------------------------------------
+# Observation definitions
+obs:
+  dc8: 
+    filename: /glade/u/home/lcthompson/mm/MELODIES-MONET/docs/examples/ungridded_support/unstructured_grid_read_uxarray/asiaaq_cs_06082026/preprocessing/dc8_data/asiaaq_dc8_merge_all.nc
+    obs_type: aircraft
+    resample: '60s'                        #  1-min means before pairing
+    variables:
+      pressure_obs: {}                     # Pa; required by vert_interp (join key)
+      altitude: {}                         # m; used by vertprofile/curtain altitude_variable
+      O3:  {unit_scale: 1,  unit_scale_method: '*' }
+      NO2: {unit_scale: 0.001, unit_scale_method: '*' }
+
+#-------------------------------------------------------------------
+# Define which comparisons/plots to complete:
+# Any key that is specific for a plot type will begin with ts for timeseries, ty for taylor
+# Opt: Specifying the variable or variable group is optional
+# For now all plots except time series average over the analysis window. 
+# Setting axis values - If set_axis = True in data_proc section of each plot_grp the yaxis for the plot will be set based on the values specified in the obs section for each variable. If set_axis is set to False, then defaults will be used. 'vmin_plot' and 'vmax_plot' are needed for 'timeseries', 'spatial_overlay', and 'boxplot'. 'vdiff_plot' is needed for 'spatial_bias' plots and'ty_scale' is needed for 'taylor' plots. 'nlevels' or the number of levels used in the contour plot can also optionally be provided for spatial_overlay plot. If set_axis = True and the proper limits are not provided in the obs section, a warning will print, and the plot will be created using the default limits.
+
+plots:
+
+  ts_dc8:
+    type: 'timeseries'
+    fig_kwargs: {figsize: [12, 6]}
+    text_kwargs: {fontsize: 18.}
+    default_plot_kwargs: {linewidth: 2.0, markersize: 6.}
+    domain_type: ['all']
+    domain_name: ['DC8']
+    data: ['dc8_cam-chem-se-era5']
+    data_proc: {rem_obs_nan: true, ts_select_time: 'time', ts_avg_window: null, set_axis: false}
+
+  vi_dc8:
+    type: 'violin'
+    fig_kwargs: {figsize: [12, 6]}
+    text_kwargs: {fontsize: 18.}
+    default_plot_kwargs: {linewidth: 2.0, markersize: 6.}
+    domain_type: ['all']
+    domain_name: ['DC8']
+    data: ['dc8_cam-chem-se-era5']
+    data_proc:
+      rem_obs_nan: True
+      set_axis: False
+    
+  vp_dc8_pa:
+    type: 'vertprofile'
+    fig_kwargs: {figsize: [10, 14]}
+    default_plot_kwargs: {linewidth: 4.0, markersize: 10.}
+    text_kwargs: {fontsize: 18.}
+    ylabel_vert: 'Pressure (Pa)'            # top-level
+    domain_type: ['all']
+    domain_name: ['DC8']
+    data: ['dc8_cam-chem-se-era5']
+    data_proc:
+      rem_obs_nan: True
+      set_axis: False
+      interquartile_style: 'shading'       # or 'box'
+    altitude_variable: pressure_obs            # top-level
+    vertprofile_bins:                      # dict with range:{start,stop,step}
+      range: {start: 10000, stop: 110000, step: 5000}
+
+  vp_dc8_m:
+    type: 'vertprofile'
+    fig_kwargs: {figsize: [10, 14]}
+    default_plot_kwargs: {linewidth: 4.0, markersize: 10.}
+    text_kwargs: {fontsize: 18.}
+    ylabel_vert: 'Altitude (m)'            # top-level
+    domain_type: ['all']
+    domain_name: ['DC8']
+    data: ['dc8_cam-chem-se-era5']
+    data_proc:
+      rem_obs_nan: True
+      set_axis: False
+      interquartile_style: 'shading'       # or 'box'
+    altitude_variable: altitude            # top-level
+    vertprofile_bins:                      # dict with range:{start,stop,step}
+      range:
+        start: 0
+        stop: 18000
+        step: 1000
+      
+  scatter_dc8:
+    type: 'scatter_density'
+    fig_kwargs: {figsize: [10, 10]}
+    default_plot_kwargs: {linewidth: 4.0, markersize: 10.}
+    text_kwargs: {fontsize: 18.}
+    domain_type: ['all']
+    domain_name: ['DC8']
+    data: ['dc8_cam-chem-se-era5']
+    data_proc:
+      rem_obs_nan: True
+      set_axis: False
+    xlabel: 'Model'
+    ylabel: 'Observation'
+    title: 'DC8 Scatter Density'
+    fill: True
+    shade_lowest: True
+
+  taylor_dc8:
+    type: 'taylor'
+    fig_kwargs: {figsize: [8, 8]}
+    default_plot_kwargs: {linewidth: 2.0, markersize: 10.}
+    text_kwargs: {fontsize: 16.}
+    domain_type: ['all']
+    domain_name: ['DC8']
+    data: ['dc8_cam-chem-se-era5']
+    data_proc: {rem_obs_nan: true, set_axis: true}
+
+  curtain_dc8_pa:
+    type: 'curtain'
+    fig_kwargs: {figsize: [20, 8]}
+    default_plot_kwargs: {linewidth: 2.0, markersize: 10.}
+    text_kwargs: {fontsize: 16.}
+    domain_type: ['all']
+    domain_name: ['DC8']
+    data: ['dc8_cam-chem-se-era5']
+    color_map: "cividis"
+    vert_coord: "pressure"
+    pressure_units: 'Pa'
+    interval: 10000       
+    num_levels: 100
+    data_proc: {rem_obs_nan: True, set_axis: True}
+
+  curtain_dc8_m:
+    type: 'curtain'
+    fig_kwargs: {figsize: [20, 8]}
+    default_plot_kwargs: {linewidth: 2.0, markersize: 10.}
+    text_kwargs: {fontsize: 16.}
+    domain_type: ['all']
+    domain_name: ['DC8']
+    data: ['dc8_cam-chem-se-era5']
+    color_map: "cividis"
+    vert_coord: 'altitude'      # 'altitude' (m) or 'pressure' 
+    altitude_units: 'm'         # label only
+    interval: 2000              # y-tick spacing 
+    num_levels: 100
+    data_proc: {rem_obs_nan: true, set_axis: true}  
+
+###-----------------------------------------------------------------------------
+stats:
+  #Stats require positive numbers, so if you want to calculate temperature use Kelvin!
+  #Wind direction has special calculations for AirNow if obs name is 'WD'
+  stat_list: ['MB', 'ME', 'RMSE', 'NMB', 'NME', 'R2'] #List stat to calculate below. Dictionary of definitions included in plots/proc_stats.py  
+  output_table: true #Always outputs a .txt file. Optional to also output as a table.
+  domain_type: ['all'] #List of domain types: 'all' or any domain in obs file. (e.g., airnow: epa_region, state_name, siteid, etc.) 
+  domain_name: ["ASIAAQ"] #List of domain names. If domain_type = all domain_name is used in plot title.
+  data: ['dc8_cam-chem-se-era5']
+
