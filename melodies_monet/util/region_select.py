@@ -240,17 +240,31 @@ def create_autoregion(data, domain_type, domain_name, domain_info=None):
             f"{domain_type!r}. If you need more capabilities, check out the custom: "
             "regions capabilities. Be aware that they require regionmask."
         )
+
+    # Reconcile longitude convention: model-mesh data is frequently 0..360 while
+    # the box bounds come in as -180..180 (add_domains, EPA/Giorgi). Compare both
+    # in -180..180 so a metro box over a 0..360 mesh isn't silently empty.
+    def _wrap180(lon):
+        return ((lon + 180.0) % 360.0) - 180.0
+
+    if isinstance(data, pd.DataFrame):
+        data = data.copy()
+        data["longitude"] = _wrap180(data["longitude"])
+    else:
+        data = data.assign_coords(longitude=_wrap180(data["longitude"]))
+    _b0, _b1 = _wrap180(bounds[0]), _wrap180(bounds[1])
+
     if isinstance(data, pd.DataFrame):
         data_all = data.loc[
-            (data["longitude"] >= bounds[0])
-            & (data["longitude"] <= bounds[1])
+            (data["longitude"] >= _b0)
+            & (data["longitude"] <= _b1)
             & (data["latitude"] >= bounds[2])
             & (data["latitude"] <= bounds[3])
         ]
     else:
         data_all = data.where(
-            (data["longitude"] >= bounds[0])
-            & (data["longitude"] <= bounds[1])
+            (data["longitude"] >= _b0)
+            & (data["longitude"] <= _b1)
             & (data["latitude"] >= bounds[2])
             & (data["latitude"] <= bounds[3]),
         )

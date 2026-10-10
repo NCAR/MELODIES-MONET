@@ -280,9 +280,23 @@ def get_epa_region_df(df):
 
 def resample_stratify(da, levels, vertical, axis=1,interpolation='linear',extrapolation='nan'):
     import stratify
+    import numpy as np
+    
+    #result = stratify.interpolate(levels, vertical.chunk().data, da.chunk().data, axis=axis,
+                                 #interpolation = interpolation,extrapolation = extrapolation)
 
-    result = stratify.interpolate(levels, vertical.chunk().data, da.chunk().data, axis=axis,
-                                 interpolation = interpolation,extrapolation = extrapolation)
+    levels_in = np.asarray(levels)
+    vertical_in = vertical.chunk().data
+    interp = interpolation
+    # Pressures should always be strictly positive, so the log is always well defined 
+    if interpolation in ('log-linear', 'loglinear', 'log_linear'):
+        levels_in = np.log(levels_in)
+        vertical_in = np.log(vertical_in)
+        interp = 'linear'
+
+    result = stratify.interpolate(levels_in, vertical_in, da.chunk().data, axis=axis,
+                                 interpolation = interp,extrapolation = extrapolation)
+
     dims = da.dims
     out = xr.DataArray(result, dims=dims)
     for i in dims:
@@ -295,8 +309,25 @@ def resample_stratify(da, levels, vertical, axis=1,interpolation='linear',extrap
                 out.coords[i] = da.coords[i]
     return out
 
-def vert_interp(ds_model,df_obs,var_name_list):
+def vert_interp(ds_model,df_obs,var_name_list,method='linear'):
+
+    """
+    Vertically interpolate model columns onto the obs pressures
+
+    
+    method : {'linear', 'nearest', 'log-linear'}
+        Vertical interpolation method for the species/met variables. 'linear'
+        (default) and 'nearest' map directly to ``stratify``; 'log-linear'
+        interpolates linearly in log-pressure
+
+    """
     from pandas import merge_asof
+
+    _allowed = {'linear', 'nearest', 'log-linear', 'loglinear', 'log_linear'}
+    if method not in _allowed:
+        print(f"Warning: unknown vertical interp method {method!r}; using 'linear'. "
+              f"Supported options: linear, nearest, log-linear.")
+        method = 'linear'
 
     ds_model['pressure_model_nan'] = ds_model['pressure_model'].copy()
     var_name_list.append('pressure_model_nan')
@@ -316,7 +347,7 @@ def vert_interp(ds_model,df_obs,var_name_list):
         else:
             out = resample_stratify(ds_model[var_name],sorted(ds_model.pressure_obs.squeeze().values,reverse=True),
                                   ds_model['pressure_model'],axis=1,
-                                  interpolation='linear',extrapolation='nearest')
+                                  interpolation=method,extrapolation='nearest')
         out.name = var_name
         var_out_list.append(out)
 
@@ -331,10 +362,32 @@ def vert_interp(ds_model,df_obs,var_name_list):
     df_model.drop(labels=['x','y','z','pressure_obs','pressure_model_nan','time_obs'], axis=1, inplace=True)
     df_model.rename(columns={'pressure_model':'pressure_obs'}, inplace=True)
 
-    final_df_model = merge_asof(df_obs, df_model, 
-                            by=['latitude', 'longitude', 'pressure_obs'], 
-                            on='time', direction='nearest')
+    # final_df_model = merge_asof(df_obs, df_model, 
+    #                         by=['latitude', 'longitude', 'pressure_obs'], 
+    #                         on='time', direction='nearest')
+    
+    # The model's pressure_obs is produced by stratifying onto the obs levels in the
+    # model's float32 dtype (i.e. float32(level)); the obs pressure is float64(level).
+    df_obs = df_obs.copy()
+    for _k in ['latitude', 'longitude', 'pressure_obs']:
+        if _k in df_obs.columns and _k in df_model.columns:
+            if df_obs[_k].dtype != df_model[_k].dtype:
+                df_obs[_k] = df_obs[_k].astype(df_model[_k].dtype)
 
+    # When a model variable shares the obs variable's name (e.g. mapping O3:'O3'),
+    # MM's plotting expects the MODEL column suffixed '_new' (obs stays bare). Rename
+    # the colliding model columns here so merge_asof doesn't fall back to its default
+    # _x/_y suffixes
+    
+    _join_keys = {'latitude', 'longitude', 'pressure_obs', 'time'}
+    _overlap = (set(df_model.columns) & set(df_obs.columns)) - _join_keys
+    if _overlap:
+        df_model = df_model.rename(columns={_c: f"{_c}_new" for _c in _overlap})
+        
+    final_df_model = merge_asof(df_obs, df_model,
+                            by=['latitude', 'longitude', 'pressure_obs'],
+                            on='time', direction='nearest')
+    
     return final_df_model
 
 def mobile_and_ground_pair(ds_model,df_obs, var_name_list):

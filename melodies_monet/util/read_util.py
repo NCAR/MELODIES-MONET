@@ -147,6 +147,18 @@ def read_analysis_ncf(filenames,xr_kws={}):
                 # Test if all the files have the same group to prevent merge issues
                 if group_name1 != ds_append.attrs['group_name']:
                     raise Exception('The group names are not consistent between the netcdf files being read.') 
+                elif 'obs' in ds_out.dims:
+                    # native-swath ('swath') product: a 1-D pixel vector on an
+                    # unindexed 'obs' dim. xr.merge would try to align 'obs' and
+                    # fail on the differing per-file pixel counts, so concatenate
+                    # the pixels instead
+                    ds_out = xr.concat([ds_out, ds_append], dim='obs')
+                elif 'time' in ds_out.dims:
+                    # per-day files with distinct time values (satellite obsgrid,
+                    # model-space stacks): concatenate along time so memory doesnt oom
+                    ds_out = xr.concat([ds_out, ds_append], dim='time',
+                                       data_vars='minimal', coords='minimal',
+                                       compat='override')
                 else:
                     ds_out = xr.merge([ds_out,ds_append])
             
