@@ -5,6 +5,11 @@ import warnings
 import xarray as xr
 import monetio as mio
 
+try:
+    import uxarray as ux
+except ImportError:  # optional dep
+    ux = None
+
 
 class model:
     """The model class.
@@ -16,6 +21,7 @@ class model:
         """Initialize a :class:`model` object."""
         self.model = None
         self.is_global = False
+        self.is_track = False
         self.radius_of_influence = None
         self.mod_kwargs = {}
         self.file_str = None
@@ -35,6 +41,10 @@ class model:
         self.plot_kwargs = None
         self.proj = None
         self.mod_to_overpass = False
+
+        # Build in uxarray native support ; populate for the scrip file provided in cesm-se 
+        self.uxds = None
+        self.uxgrid = None
 
     def __repr__(self):
         return (
@@ -243,22 +253,82 @@ class model:
                 self.obj = mio.models.cesm_fv.open_mfdataset(self.files, **self.mod_kwargs)
             except AttributeError:
                 self.obj = mio.models._cesm_fv_mm.open_mfdataset(self.files, **self.mod_kwargs)
+       
         # CAM-chem-SE grid or MUSICAv0
-        elif "cesm_se" in self.model.lower():
-            print("**** Reading CESM SE model output...")
+        elif "cesm_se" in self.model.lower() or "mpas" in self.model.lower():
+            print("**** Reading CAM unstructured model output (cesm_se / mpas)...")
             self.mod_kwargs.update({"var_list": list_input_var})
-            if self.scrip_file.startswith("example:"):
-                from melodies_monet import tutorial
 
-                example_id = ":".join(s.strip() for s in self.scrip_file.split(":")[1:])
-                self.scrip_file = tutorial.fetch_example(example_id)
-            self.mod_kwargs.update({"scrip_file": self.scrip_file})
+            # Grid geometry: SCRIP (CESM-SE) or native MPAS mesh/init file.
+            scrip = getattr(self, "scrip_file", None)
+            mesh = getattr(self, "mesh_file", None)
+            if scrip and scrip.startswith("example:"):
+                from melodies_monet import tutorial
+                example_id = ":".join(s.strip() for s in scrip.split(":")[1:])
+                scrip = self.scrip_file = tutorial.fetch_example(example_id)
+            ux_grid_path = scrip or mesh
+            if ux_grid_path is None:
+                raise ValueError(
+                    'CAM unstructured output (cesm_se / mpas) requires '
+                    '"scrip_file" (SCRIP, e.g. CESM-SE) or "mesh_file" '
+                    '(MPAS mesh/init file) in the YAML config.')
+
+            if scrip:
+                self.mod_kwargs.update({"scrip_file": scrip})
+            if mesh:
+                self.mod_kwargs.update({"mesh_file": mesh})
+            print(f"Using unstructured grid file: {ux_grid_path}")
+
+            # monetio's unstructured CAM reader is _cam_unstructured in recent
+            # versions (it also handles the MPAS mesh_file input); fall back to
+            # the older cesm_se module names so released monetio still works.
             try:
-                self.obj = mio.models.cesm_se.open_mfdataset(self.files, **self.mod_kwargs)
-            except AttributeError:
-                self.obj = mio.models._cesm_se_mm.open_mfdataset(self.files, **self.mod_kwargs)
-            # self.obj, self.obj_scrip = read_cesm_se.open_mfdataset(self.files,**self.mod_kwargs)
-            # self.obj.monet.scrip = self.obj_scrip
+                from monetio.models import _cam_unstructured
+            except ImportError:
+                if mesh:
+                    raise ImportError(
+                        'MPAS "mesh_file" input requires the monetio '
+                        'unstructured CAM reader '
+                        '(monetio.models._cam_unstructured), which this monetio '
+                        'version does not provide. Please update monetio.'
+                    )
+                try:
+                    self.obj = mio.models.cesm_se.open_mfdataset(
+                        self.files, **self.mod_kwargs)
+                except AttributeError:
+                    self.obj = mio.models._cesm_se_mm.open_mfdataset(
+                        self.files, **self.mod_kwargs)
+            else:
+                self.obj = _cam_unstructured.open_mfdataset(
+                    self.files, **self.mod_kwargs)
+            
+            try:
+                self.uxgrid = ux.open_grid(ux_grid_path)
+                print("**** Opened uxarray grid:", ux_grid_path)
+            except Exception as e:
+                self.uxgrid = None
+                warnings.warn(f"Could not open uxarray grid from {ux_grid_path!r}; "
+                    f"continuing with the legacy plotting path. Reason: {e}")
+            if scrip:
+                self.obj.attrs['mio_scrip_file'] = scrip
+            if mesh:
+                self.obj.attrs['mio_mesh_file'] = mesh
+                
+            self.obj.attrs['mio_has_unstructured_grid'] = True
+
+            # insert this here for the unstructured grid stuff. This renaming may be breakng somewhere else, but gets it out of the 
+            # juypter notebook. 
+            _rename = {}
+            if "lon" in self.obj.data_vars and "longitude" not in self.obj.variables:
+                _rename["lon"] = "longitude"
+            if "lat" in self.obj.data_vars and "latitude" not in self.obj.variables:
+                _rename["lat"] = "latitude"
+            if _rename:
+                self.obj = self.obj.rename(_rename)
+            _promote = [c for c in ("longitude", "latitude") if c in self.obj.data_vars]
+            if _promote:
+                self.obj = self.obj.set_coords(_promote)
+
         elif "camx" in self.model.lower():
             self.mod_kwargs.update({"var_list": list_input_var})
             self.mod_kwargs.update(
@@ -276,6 +346,7 @@ class model:
                 #the _camx_mm.py reader and not the camx.py reader, which is old.
             except AttributeError:
                 self.obj = mio.models.camx.open_mfdataset(self.files, **self.mod_kwargs)
+                
         elif "raqms" in self.model.lower():
             self.mod_kwargs.update({"var_list": list_input_var})
             if time_interval is not None:
